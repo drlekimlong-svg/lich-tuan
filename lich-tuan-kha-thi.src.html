@@ -1,0 +1,1366 @@
+<title>Lịch tuần khả thi</title>
+<style>
+/* Bố cục: một cột trên điện thoại (168 giờ → lưới tuần → các khối đã nhập); từ 900px chia hai cột, lưới tuần bên trái. */
+:root {
+  --bg: #DCE2E8; --surface: #F5F6F4; --sunken: #E8ECF0; --ink: #17231E; --muted: #4A524D; --line: #BCC5CE;
+  --accent: #1D5C42; --on-accent: #FFFFFF; --navy: #16324F;
+  --c-fixed: #16324F; --c-ess: #5E7186; --c-hua: #9A6412; --on-block: #FFFFFF;
+  --free-fill: #E1EEE7; --free-ink: #1D5C42; --warn-bg: #F6E7CF; --warn-ink: #6B4208; --danger: #9C2F2F; --focus: #0B5CAD;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --rh: 13px; /* chiều cao một ô 30 phút trong lưới tuần */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101B26; --surface: #1A2936; --sunken: #142230; --ink: #E9EEF1; --muted: #A8B4BE; --line: #34495B;
+    --accent: #62B894; --on-accent: #0B1A13; --navy: #A9C4E0;
+    --c-fixed: #3F6FA6; --c-ess: #5E7186; --c-hua: #9A6412; --on-block: #FFFFFF;
+    --free-fill: #1B3A2D; --free-ink: #7FCBA9; --warn-bg: #3E2F14; --warn-ink: #F0D29A; --danger: #F0908A; --focus: #8CC2FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101B26; --surface: #1A2936; --sunken: #142230; --ink: #E9EEF1; --muted: #A8B4BE; --line: #34495B;
+  --accent: #62B894; --on-accent: #0B1A13; --navy: #A9C4E0;
+  --c-fixed: #3F6FA6; --c-ess: #5E7186; --c-hua: #9A6412; --on-block: #FFFFFF;
+  --free-fill: #1B3A2D; --free-ink: #7FCBA9; --warn-bg: #3E2F14; --warn-ink: #F0D29A; --danger: #F0908A; --focus: #8CC2FF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 500 16px/1.45 var(--font); -webkit-text-size-adjust: 100%; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+.app { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; display: grid; gap: 16px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px; border-bottom: 3px solid var(--accent); padding-bottom: 12px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: clamp(26px, 5vw, 34px); font-weight: 700; line-height: 1.15; text-wrap: balance; }
+.build { font-size: 13px; color: var(--muted); }
+
+.sets { display: flex; flex-wrap: wrap; gap: 8px; }
+.set { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 600; cursor: pointer; min-height: 44px; }
+.set[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--bg); }
+.set small { font-weight: 500; opacity: .85; }
+.setnote { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 10px 14px; font-size: 15px; }
+.setnote span { flex: 1 1 240px; min-width: 0; }
+
+.layout { display: grid; gap: 16px; grid-template-areas: "sum" "week" "list"; }
+@media (min-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); grid-template-areas: "week sum" "week list"; align-items: start; }
+}
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; display: grid; gap: 12px; }
+.sum { grid-area: sum; } .week { grid-area: week; } .list { grid-area: list; }
+.phead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+h2 { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.hint { font-size: 14px; color: var(--muted); }
+
+.btn { border: 1.5px solid var(--accent); background: transparent; color: var(--accent); border-radius: 10px; padding: 8px 14px; font-weight: 700; cursor: pointer; min-height: 44px; }
+.btn.pri { background: var(--accent); color: var(--on-accent); }
+.btn.danger { border-color: var(--danger); color: var(--danger); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---- bảng 168 giờ */
+.big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.big b { font-size: 40px; line-height: 1; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.big span { font-size: 17px; font-weight: 600; }
+.bar { display: flex; height: 40px; border-radius: 8px; overflow: hidden; background: var(--sunken); }
+.bar i { display: flex; align-items: center; justify-content: center; min-width: 0; font-style: normal; font-weight: 700; font-size: 14px; color: var(--on-block); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.bar .fixed { background: var(--c-fixed); } .bar .ess { background: var(--c-ess); } .bar .free { background: var(--accent); color: var(--on-accent); }
+.legend { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.legend li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 4px 10px; align-items: baseline; }
+.legend .sw { width: 14px; height: 14px; border-radius: 3px; align-self: center; }
+.legend b { font-weight: 700; } .legend .n { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.legend small { grid-column: 2 / -1; font-size: 14px; color: var(--muted); }
+.sw.fixed { background: var(--c-fixed); } .sw.ess { background: var(--c-ess); } .sw.free { background: var(--accent); }
+.facts { display: grid; gap: 6px; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+.facts div { display: flex; justify-content: space-between; gap: 12px; }
+.facts dt { color: var(--muted); min-width: 0; } .facts dd { margin: 0; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.steps { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; counter-reset: st; }
+.steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; }
+.steps li::before { counter-increment: st; content: counter(st); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--sunken); color: var(--muted); border: 1.5px solid var(--line); }
+.steps li.ok::before { content: "✓"; background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tblwrap { overflow-x: auto; }
+details.byday > summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 44px; display: flex; align-items: center; gap: 8px; }
+details.byday > summary::before { content: "▸"; } details.byday[open] > summary::before { content: "▾"; }
+details.byday > summary::-webkit-details-marker { display: none; }
+table.days { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.days th, table.days td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.days th:first-child, table.days td:first-child { text-align: left; }
+table.days thead th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+table.days td.fr { font-weight: 700; color: var(--free-ink); }
+
+/* ---- lưới tuần */
+.wk { display: grid; gap: 4px; }
+.wk-head, .wk-body { display: grid; grid-template-columns: 30px repeat(7, minmax(0, 1fr)); gap: 3px; }
+.wk-head span { text-align: center; font-size: 13px; font-weight: 700; color: var(--navy); }
+.wk-time, .wk-day { position: relative; height: calc(var(--rh) * 48); }
+.wk-time span { position: absolute; right: 2px; transform: translateY(-50%); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wk-day { background: var(--sunken) repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--rh) * 4 - 1px), var(--line) calc(var(--rh) * 4 - 1px), var(--line) calc(var(--rh) * 4)); border-radius: 4px; overflow: hidden; }
+.blk { position: absolute; left: 0; right: 0; border: 0; padding: 1px 2px; margin: 0; border-radius: 3px; cursor: pointer; overflow: hidden; display: block; text-align: center;
+  font-size: 11px; line-height: 1.15; font-weight: 700; color: var(--on-block); box-shadow: inset 0 0 0 1px var(--surface); }
+.blk.fixed { background: var(--c-fixed); } .blk.ess { background: var(--c-ess); } .blk.hua { background: var(--c-hua); }
+.blk.free { background: var(--free-fill); color: var(--free-ink); box-shadow: inset 0 0 0 1.5px var(--free-ink); }
+.blk.scrap { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.blk.sel { outline: 3px solid var(--focus); outline-offset: -1px; z-index: 2; }
+.blk .lg { display: none; }
+@media (min-width: 560px) { .blk .lg { display: inline; } .blk .sm { display: none; } }
+.key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.key i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.key .fixed { background: var(--c-fixed); } .key .ess { background: var(--c-ess); } .key .hua { background: var(--c-hua); }
+.key .free { background: var(--free-fill); box-shadow: inset 0 0 0 1.5px var(--free-ink); } .key .scrap { box-shadow: inset 0 0 0 1px var(--line); }
+
+/* ---- các khối đã nhập */
+.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rules h3 { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.rule { width: 100%; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; text-align: left; background: transparent; border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; cursor: pointer; min-height: 44px; }
+.rule .sw { width: 12px; height: 12px; border-radius: 3px; grid-row: 1 / span 2; }
+.rule .sw.fixed { background: var(--c-fixed); } .rule .sw.ess { background: var(--c-ess); } .rule .sw.hua { background: var(--c-hua); }
+.rule b { font-weight: 700; min-width: 0; overflow-wrap: anywhere; } .rule .h { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rule small { grid-column: 2 / -1; font-size: 14px; color: var(--muted); }
+.empty { border: 1.5px dashed var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; color: var(--muted); }
+.empty b { color: var(--ink); }
+
+/* ---- hộp nhập khối */
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); padding: 0; width: min(480px, calc(100vw - 24px)); max-height: calc(100vh - 24px); }
+dialog::backdrop { background: rgba(8, 16, 24, .55); }
+.form { display: grid; gap: 14px; padding: 18px; }
+.form h3 { font-size: 20px; font-weight: 700; }
+.fld { display: grid; gap: 6px; min-width: 0; } .fld > span, .fld > legend { font-size: 13px; font-weight: 700; color: var(--muted); padding: 0; }
+fieldset.fld { border: 0; margin: 0; padding: 0; }
+.fld select, .fld input[type="text"] { width: 100%; min-height: 44px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); padding: 8px 10px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.chips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.chips label { position: relative; display: block; }
+.chips input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.chips span { display: grid; place-items: center; min-height: 44px; border: 1.5px solid var(--line); border-radius: 8px; font-weight: 700; font-size: 14px; background: var(--bg); }
+.chips input:checked + span { background: var(--navy); border-color: var(--navy); color: var(--bg); }
+.chips input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick button { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 32px; }
+.msg { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
+.frow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.frow .left { margin-right: auto; }
+.foot { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .blk, .set, .btn { transition: background-color .12s, color .12s; } }
+
+/* ===== bước 2: ba việc ưu tiên, lịch tuần này, sáu tiêu chí, xuất lịch ===== */
+:root { --c-soft: #A8C3B6; --on-soft: #17231E; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-soft: #2F6B55; --on-soft: #FFFFFF; } }
+:root[data-theme="dark"] { --c-soft: #2F6B55; --on-soft: #FFFFFF; }
+
+textarea { font: inherit; color: inherit; }
+.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.tab { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
+  font-weight: 700; cursor: pointer; padding: 6px 8px; text-align: left; line-height: 1.2; font-size: 15px; min-width: 0; }
+.tab b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--sunken); border: 1.5px solid var(--line); font-size: 14px; flex: none; }
+.tab[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 -4px 0 var(--accent); }
+.tab[aria-selected="true"] b { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.stack { display: grid; gap: 16px; }
+
+/* ---- ba việc ưu tiên */
+.tasks { display: grid; gap: 12px; }
+@media (min-width: 900px) { .tasks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.task { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.task h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.task h3 b { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 14px; flex: none; }
+.fld input[type="number"], .fld input[type="date"], .fld textarea { width: 100%; min-height: 44px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); padding: 8px 10px; }
+.fld textarea { resize: vertical; min-height: 72px; line-height: 1.4; }
+.fld input:disabled, .fld textarea:disabled, .fld select:disabled { opacity: 1; background: transparent; border-style: dashed; }
+.ck { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; min-height: 32px; }
+.ck input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
+.need { background: var(--sunken); border-radius: 8px; padding: 10px 12px; font-size: 14px; display: grid; gap: 2px; }
+.need b { font-variant-numeric: tabular-nums; }
+.need .lack { color: var(--warn-ink); background: var(--warn-bg); border-radius: 6px; padding: 2px 6px; justify-self: start; }
+.note { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
+
+/* ---- lịch tuần này */
+.strip { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; color: var(--muted); }
+.strip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.daterow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; }
+.daterow .fld { flex: 0 1 200px; }
+.blk.uu { background: var(--accent); color: var(--on-accent); }
+.blk.soft { background: var(--c-soft); color: var(--on-soft); }
+.blk.dp { background: var(--surface); color: var(--navy); box-shadow: none; border: 2px dashed var(--navy); }
+.key .uu { background: var(--accent); } .key .soft { background: var(--c-soft); } .key .dp { border: 2px dashed var(--navy); }
+.rule .sw.uu { background: var(--accent); } .rule .sw.soft { background: var(--c-soft); } .rule .sw.dp { border: 2px dashed var(--navy); }
+.score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.score b { font-size: 40px; line-height: 1; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score.no b { color: var(--danger); }
+.score span { font-size: 17px; font-weight: 600; }
+.check { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.check li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; }
+.check .mk { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.check li.ok .mk { background: var(--accent); color: var(--on-accent); }
+.check li.no .mk { border: 2px solid var(--danger); color: var(--danger); }
+.check b { font-weight: 700; }
+.check small { display: block; color: var(--muted); font-size: 14px; }
+details.more > summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 44px; display: flex; align-items: center; gap: 8px; }
+details.more > summary::before { content: "▸"; } details.more[open] > summary::before { content: "▾"; }
+details.more > summary::-webkit-details-marker { display: none; }
+.sub { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 10px; }
+.sub h3 { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.printonly { display: none; }
+#v-lich { grid-template-areas: "week" "sum" "list"; }
+@media (min-width: 900px) { #v-lich { grid-template-areas: "week sum" "week list"; } }
+
+/* ===== bước 3: rà soát cuối tuần, sao lưu ===== */
+.tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 559px) { .tab { flex-direction: column; gap: 3px; text-align: center; font-size: 13px; padding: 6px 2px; min-height: 66px; } }
+#v-ra { grid-template-areas: "week" "sum" "list"; }
+@media (min-width: 900px) { #v-ra { grid-template-areas: "week sum" "week list"; } }
+.ticks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tick { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; background: transparent; border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; cursor: pointer; min-height: 48px; }
+.tick .mk { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; border: 2px solid var(--line); color: transparent; }
+.tick[aria-pressed="true"] .mk { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.tick b { font-weight: 700; font-variant-numeric: tabular-nums; } .tick small { display: block; color: var(--muted); font-size: 14px; }
+.tick:disabled, .seg button:disabled, .cause:disabled { cursor: default; }
+.resl { display: grid; gap: 10px; }
+.resrow { display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.resrow > b { font-weight: 700; overflow-wrap: anywhere; }
+.resrow .line { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; }
+.resrow .fld { flex: 0 1 150px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { min-height: 44px; min-width: 44px; padding: 6px 14px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); font-weight: 700; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--bg); }
+.causes { display: grid; gap: 6px; }
+.cause { text-align: left; border: 1.5px solid var(--line); border-radius: 8px; background: transparent; padding: 10px 12px; cursor: pointer; min-height: 48px; display: grid; gap: 2px; }
+.cause[aria-checked="true"] { border-color: var(--accent); background: var(--free-fill); }
+.cause b { font-weight: 700; } .cause small { color: var(--muted); font-size: 14px; }
+#ra-msg, #bk-text { width: 100%; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); padding: 10px 12px; line-height: 1.45; resize: vertical; }
+#ra-msg { min-height: 150px; } #bk-text { min-height: 80px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.hist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.hist li { border-bottom: 1px solid var(--line); padding-bottom: 8px; } .hist b { font-variant-numeric: tabular-nums; } .hist small { display: block; color: var(--muted); }
+#backup > summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 44px; display: flex; align-items: center; gap: 8px; }
+#backup > summary::before { content: "▸"; } #backup[open] > summary::before { content: "▾"; }
+#backup > summary::-webkit-details-marker { display: none; }
+input[type="file"] { max-width: 100%; font-size: 14px; }
+
+@media print {
+  @page { size: A4 landscape; margin: 9mm; }
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    --bg: #FFFFFF; --surface: #FFFFFF; --sunken: #F1F3F5; --ink: #111111; --muted: #444444; --line: #B9C0C7;
+    --accent: #1D5C42; --on-accent: #FFFFFF; --navy: #16324F; --c-fixed: #16324F; --c-ess: #5E7186; --c-hua: #9A6412; --on-block: #FFFFFF;
+    --free-fill: #FFFFFF; --free-ink: #1D5C42; --c-soft: #A8C3B6; --on-soft: #17231E; --rh: 3.2mm; color-scheme: light;
+  }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-size: 9.5pt; line-height: 1.3; }
+  .app { max-width: none; padding: 0; gap: 3mm; }
+  .top { border-bottom-width: 2px; padding-bottom: 1.5mm; } .eyebrow { font-size: 7pt; } h1 { font-size: 15pt; }
+  .build, .sets, .setnote, .tabs, .btn, .btns, .hint, .foot, dialog, #v-mau, #v-viec, #v-ra, #backup, #v-lich .sum, #v-lich .list, .daterow, .strip { display: none !important; }
+  #v-lich { display: grid !important; grid-template-columns: 1.5fr 1fr; grid-template-areas: "week info"; gap: 5mm; align-items: start; }
+  .panel { border: 0; border-radius: 0; padding: 0; gap: 2mm; background: transparent; }
+  .printonly { display: grid; gap: 2.5mm; grid-area: info; align-content: start; }
+  .printonly h3 { font-size: 8pt; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--line); padding-bottom: .5mm; margin-top: 1mm; }
+  .printonly p, .printonly li { font-size: 9pt; } .printonly ol, .printonly ul { margin: 0; padding-left: 5mm; display: grid; gap: 1mm; }
+  .printonly small { color: var(--muted); font-size: 8pt; }
+  .printonly ul { columns: 2; column-gap: 5mm; display: block; } .printonly ul li { font-size: 8pt; break-inside: avoid; margin-bottom: .8mm; }
+  .wk-head span { font-size: 8pt; } .wk-time span { font-size: 6.5pt; }
+  .blk { font-size: 6.5pt; line-height: 1.1; cursor: default; } .blk .lg { display: inline; } .blk .sm { display: none; }
+  .blk.free, .blk.scrap { box-shadow: inset 0 0 0 .5pt var(--line); color: transparent; }
+  .key { font-size: 7.5pt; gap: 1mm 4mm; }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">CLB Ngoại khoa Trưng Vương · Workshop Quản lý thời gian</p>
+      <h1>Lịch tuần khả thi</h1>
+    </div>
+    <p class="build">Bản thử bước 3: thêm rà soát cuối tuần và sao lưu</p>
+  </header>
+
+  <nav class="sets" aria-label="Chọn bộ dữ liệu">
+    <button type="button" class="set" data-set="an">An <small>· mẫu Y4</small></button>
+    <button type="button" class="set" data-set="minh">Minh <small>· mẫu Y2</small></button>
+    <button type="button" class="set" data-set="toi">Của tôi</button>
+  </nav>
+  <div class="setnote" id="setnote" hidden>
+    <span id="setnote-text"></span>
+    <button type="button" class="btn" id="btn-copy">Chép sang “Của tôi” để sửa</button>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Bốn bước của một tuần">
+    <button type="button" class="tab" role="tab" id="tab-mau" data-view="mau" aria-controls="v-mau"><b>1</b><span>Tuần mẫu</span></button>
+    <button type="button" class="tab" role="tab" id="tab-viec" data-view="viec" aria-controls="v-viec"><b>2</b><span>Ba việc ưu tiên</span></button>
+    <button type="button" class="tab" role="tab" id="tab-lich" data-view="lich" aria-controls="v-lich"><b>3</b><span>Lịch tuần này</span></button>
+    <button type="button" class="tab" role="tab" id="tab-ra" data-view="ra" aria-controls="v-ra"><b>4</b><span>Rà soát</span></button>
+  </div>
+
+  <!-- ============ 1 · Tuần mẫu ============ -->
+  <div class="layout" id="v-mau" role="tabpanel" aria-labelledby="tab-mau">
+    <section class="panel sum" aria-labelledby="h-sum">
+      <div class="phead"><h2 id="h-sum">168 giờ của một tuần</h2></div>
+      <div class="big"><b id="s-free">0</b><span id="s-free-note">giờ còn lại</span></div>
+      <div class="bar" id="s-bar" role="img" aria-label=""></div>
+      <ul class="legend" id="s-legend"></ul>
+      <dl class="facts" id="s-facts"></dl>
+      <ol class="steps" id="s-steps"></ol>
+      <details class="byday">
+        <summary>Xem theo từng ngày</summary>
+        <div class="tblwrap">
+          <table class="days">
+            <thead><tr><th scope="col">Ngày</th><th scope="col">Cố định</th><th scope="col">Thiết yếu</th><th scope="col">Còn lại</th></tr></thead>
+            <tbody id="s-days"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="panel week" aria-labelledby="h-week">
+      <div class="phead">
+        <h2 id="h-week">Tuần mẫu</h2>
+        <div class="btns">
+          <button type="button" class="btn" id="btn-undo" disabled>Hoàn tác</button>
+          <button type="button" class="btn pri" id="btn-add">Thêm giờ</button>
+        </div>
+      </div>
+      <p class="hint" id="wk-hint"></p>
+      <div class="wk">
+        <div class="wk-head" id="wk-head"></div>
+        <div class="wk-body" id="wk-body" data-view="mau"></div>
+      </div>
+      <div class="key">
+        <span><i class="fixed"></i>Cố định</span><span><i class="ess"></i>Thiết yếu</span><span><i class="hua"></i>Đã có chủ</span>
+        <span><i class="free"></i>Khối tự quyết, từ 60 phút</span><span><i class="scrap"></i>Giờ vụn, 30 phút</span>
+      </div>
+    </section>
+
+    <section class="panel list" aria-labelledby="h-list">
+      <div class="phead">
+        <h2 id="h-list">Các khối đã nhập</h2>
+        <button type="button" class="btn danger" id="btn-clear" hidden>Xóa hết</button>
+      </div>
+      <ul class="rules" id="rules"></ul>
+      <p class="foot" id="foot"></p>
+    </section>
+  </div>
+
+  <!-- ============ 2 · Ba việc ưu tiên ============ -->
+  <div class="stack" id="v-viec" role="tabpanel" aria-labelledby="tab-viec" hidden>
+    <section class="panel" aria-labelledby="h-viec">
+      <div class="phead"><h2 id="h-viec">Nếu tuần tới chỉ làm xong được ba việc, đó là ba việc nào?</h2></div>
+      <p class="hint" id="viec-hint"></p>
+      <div class="tasks" id="tasks"></div>
+      <p class="note" id="viec-note" hidden></p>
+      <div class="strip" id="viec-sum"></div>
+      <div class="btns"><button type="button" class="btn pri" id="btn-to-lich">Sang bước 3: xếp vào lịch</button></div>
+    </section>
+  </div>
+
+  <!-- ============ 3 · Lịch tuần này ============ -->
+  <div class="layout" id="v-lich" role="tabpanel" aria-labelledby="tab-lich" hidden>
+    <section class="panel week" aria-labelledby="h-lich">
+      <div class="phead">
+        <h2 id="h-lich">Lịch tuần này</h2>
+        <div class="btns">
+          <button type="button" class="btn" id="btn-undo2" disabled>Hoàn tác</button>
+          <button type="button" class="btn pri" id="btn-add2">Thêm khối</button>
+        </div>
+      </div>
+      <div class="daterow">
+        <label class="fld"><span>Tuần bắt đầu từ thứ Hai ngày</span><input type="date" id="w-monday"></label>
+        <button type="button" class="btn" id="btn-newweek">Lập tuần mới từ tuần mẫu</button>
+      </div>
+      <p class="hint" id="wk2-hint"></p>
+      <div class="strip" id="wk2-strip"></div>
+      <div class="wk">
+        <div class="wk-head" id="wk2-head"></div>
+        <div class="wk-body" id="wk2-body" data-view="lich"></div>
+      </div>
+      <div class="key">
+        <span><i class="uu"></i>Việc ưu tiên</span><span><i class="soft"></i>Việc nhỏ, vận động</span><span><i class="dp"></i>Dự phòng</span>
+        <span><i class="fixed"></i>Cố định</span><span><i class="ess"></i>Thiết yếu</span><span><i class="hua"></i>Đã có chủ</span><span><i class="free"></i>Còn trống</span>
+      </div>
+    </section>
+
+    <section class="panel sum" aria-labelledby="h-check">
+      <div class="phead"><h2 id="h-check">Sáu tiêu chí của một lịch khả thi</h2></div>
+      <div class="score" id="c-score"><b>0/6</b><span></span></div>
+      <ol class="check" id="c-list"></ol>
+      <p class="note" id="c-note" hidden></p>
+    </section>
+
+    <section class="panel list" aria-labelledby="h-heavy">
+      <div class="phead"><h2 id="h-heavy">Ngày sau trực hoặc ngày nặng nhất</h2></div>
+      <label class="fld"><span>Ngày</span><select id="w-heavy-day"></select></label>
+      <label class="fld"><span>Ngày đó chỉ làm gì, bỏ gì</span><textarea id="w-heavy-text" rows="3" maxlength="300"></textarea></label>
+      <div class="sub">
+        <h3>Các khối của kế hoạch</h3>
+        <ul class="rules" id="rules2"></ul>
+        <details class="more">
+          <summary>Giờ cố định, thiết yếu và việc đã hứa của tuần này</summary>
+          <p class="hint">Chép từ tuần mẫu. Sửa ở đây nếu tuần này khác thường, ví dụ đổi ngày trực; tuần mẫu không đổi theo.</p>
+          <ul class="rules" id="rules2b"></ul>
+        </details>
+      </div>
+      <div class="sub">
+        <h3>Đưa lịch ra nơi bạn dùng hằng ngày</h3>
+        <p class="hint" id="x-hint"></p>
+        <div class="btns">
+          <button type="button" class="btn pri" id="btn-ics">Tải tệp cho Lịch Google (.ics)</button>
+          <button type="button" class="btn" id="btn-print">In tờ lịch A4</button>
+        </div>
+        <p class="note" id="x-msg" hidden></p>
+      </div>
+      <p class="foot" id="foot2"></p>
+    </section>
+
+    <section class="printonly" id="print-info" aria-hidden="true"></section>
+  </div>
+
+  <!-- ============ 4 · Rà soát cuối tuần ============ -->
+  <div class="layout" id="v-ra" role="tabpanel" aria-labelledby="tab-ra" hidden>
+    <section class="panel week" aria-labelledby="h-ra">
+      <div class="phead"><h2 id="h-ra">Kế hoạch và thực tế</h2></div>
+      <p class="hint" id="ra-hint"></p>
+      <div class="score" id="ra-score"><b>0/0</b><span></span></div>
+      <ul class="ticks" id="ra-ticks"></ul>
+      <div class="sub">
+        <h3>Ba việc ưu tiên của tuần</h3>
+        <div class="resl" id="ra-res"></div>
+        <p class="hint" id="ra-ratio"></p>
+      </div>
+      <div class="sub">
+        <div class="two">
+          <label class="fld"><span>Số đêm ngủ đạt mức tự đặt (trên 7)</span><input type="number" id="ra-nights" data-r="nights" min="0" max="7" step="1" inputmode="numeric"></label>
+          <label class="fld"><span>Màn hình mỗi ngày (phút, trung bình)</span><input type="number" id="ra-screen" data-r="screen" min="0" max="1440" step="5" inputmode="numeric"></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel sum" aria-labelledby="h-cause">
+      <div class="phead"><h2 id="h-cause">Vì sao lệch? Chọn một nguyên nhân chính</h2></div>
+      <div class="causes" id="ra-causes" role="radiogroup" aria-labelledby="h-cause"></div>
+      <p class="note" id="ra-fix" hidden></p>
+      <label class="fld"><span>Một ví dụ cụ thể trong tuần</span><textarea id="ra-ex" data-r="ex" rows="3" maxlength="300"></textarea></label>
+      <label class="fld"><span>Điều đã chạy tốt, tôi giữ</span><textarea id="ra-keep" data-r="keep" rows="3" maxlength="300"></textarea></label>
+      <label class="fld"><span>Một điều tôi đổi trong tuần tới</span><textarea id="ra-change" data-r="change" rows="3" maxlength="300"></textarea></label>
+      <fieldset class="fld"><legend>Tôi có giữ được những gì đã hứa với người khác không?</legend><div class="seg" id="ra-kept"></div></fieldset>
+      <fieldset class="fld"><legend>Tuần này tôi kiểm soát được thời gian ở mức (1 = hoàn toàn không, 5 = hoàn toàn có)</legend><div class="seg" id="ra-ctrl"></div></fieldset>
+    </section>
+
+    <section class="panel list" aria-labelledby="h-msg">
+      <div class="phead"><h2 id="h-msg">Ba dòng gửi người đồng hành</h2></div>
+      <textarea id="ra-msg" rows="6" readonly aria-labelledby="h-msg"></textarea>
+      <div class="btns"><button type="button" class="btn pri" id="btn-copymsg">Chép ba dòng</button></div>
+      <p class="hint" id="ra-copied"></p>
+      <div class="sub">
+        <h3>Tuần tới</h3>
+        <p class="hint">Việc cuối của giờ rà soát là lập lịch tuần mới. App giữ ba việc để bạn sửa lại, xóa các khối đã xếp, và ghi tuần vừa rồi vào danh sách bên dưới.</p>
+        <div class="btns"><button type="button" class="btn" id="btn-newweek2">Xong rà soát: lập tuần mới</button></div>
+      </div>
+      <div class="sub" id="ra-hist-wrap">
+        <h3>Các tuần đã rà soát</h3>
+        <ul class="hist" id="ra-hist"></ul>
+      </div>
+    </section>
+  </div>
+
+  <details class="panel" id="backup">
+    <summary>Sao lưu và khôi phục dữ liệu “Của tôi”</summary>
+    <p class="hint">Dữ liệu chỉ nằm trong trình duyệt này. Hãy sao lưu mỗi khi rà soát xong, và trước khi đổi máy, đổi trình duyệt hoặc xóa dữ liệu duyệt web. Nên thêm trang này vào màn hình chính của điện thoại để mở nhanh.</p>
+    <div class="btns">
+      <button type="button" class="btn pri" id="btn-bk-copy">Chép dữ liệu sao lưu</button>
+      <button type="button" class="btn" id="btn-bk-file">Tải tệp sao lưu</button>
+    </div>
+    <label class="fld"><span>Khôi phục: dán dữ liệu sao lưu vào đây, hoặc chọn tệp đã tải</span><textarea id="bk-text" rows="3" spellcheck="false"></textarea></label>
+    <div class="btns">
+      <input type="file" id="bk-file" accept=".json,application/json" aria-label="Chọn tệp sao lưu">
+      <button type="button" class="btn danger" id="btn-bk-restore">Khôi phục</button>
+    </div>
+    <p class="note" id="bk-msg" hidden></p>
+  </details>
+</div>
+
+<dialog id="dlg" aria-labelledby="f-title">
+  <form class="form" id="form" novalidate>
+    <h3 id="f-title">Thêm giờ</h3>
+    <label class="fld"><span>Loại</span><select id="f-type"></select></label>
+    <label class="fld" id="f-note-wrap"><span id="f-note-label">Ghi chú (không bắt buộc)</span><input type="text" id="f-note" maxlength="80" autocomplete="off"></label>
+    <fieldset class="fld">
+      <legend>Ngày</legend>
+      <div class="chips" id="f-days"></div>
+      <div class="quick">
+        <button type="button" data-days="01234">T2–T6</button><button type="button" data-days="56">Cuối tuần</button>
+        <button type="button" data-days="0123456">Mỗi ngày</button><button type="button" data-days="">Bỏ chọn</button>
+      </div>
+    </fieldset>
+    <div class="two">
+      <label class="fld"><span>Từ</span><select id="f-start"></select></label>
+      <label class="fld"><span>Đến</span><select id="f-end"></select></label>
+    </div>
+    <p class="hint" id="f-span"></p>
+    <p class="msg" id="f-msg" role="alert" hidden></p>
+    <div class="frow">
+      <button type="button" class="btn danger left" id="f-del" hidden>Xóa khối này</button>
+      <button type="button" class="btn" id="f-cancel">Hủy</button>
+      <button type="submit" class="btn pri" id="f-save">Lưu</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     CẤU HÌNH · câu chữ, ngưỡng và dữ liệu mẫu của workshop.
+     Sửa ở khối này; phần mã bên dưới không cần đụng tới.
+     ===================================================================== */
+  var CFG = {
+    storageKey: 'lich-tuan-kha-thi.v1',
+    blockMinSlots: 2,     // khối tự quyết: từ 60 phút liền (2 ô 30 phút); ngắn hơn là giờ vụn
+    dpMinCount: 2,        // khoảng dự phòng: ít nhất hai khoảng…
+    dpMinSlots: 2,        // …mỗi khoảng từ 60 phút
+    addHalf: 1.5,         // chưa từng làm việc tương tự: cộng thêm một nửa
+    passScore: 5          // đạt yêu cầu khi được từ 5 trên 6 tiêu chí
+  };
+  var TYPES = {
+    lop:  { name: 'Lên lớp, thực hành', short: 'Lớp',  cat: 'fixed' },
+    bv:   { name: 'Bệnh viện',          short: 'BV',   cat: 'fixed' },
+    truc: { name: 'Trực',               short: 'Trực', cat: 'fixed' },
+    dc:   { name: 'Di chuyển',          short: 'Đi',   cat: 'fixed' },
+    ngu:  { name: 'Ngủ',                short: 'Ngủ',  cat: 'ess' },
+    sh:   { name: 'Ăn, sinh hoạt',      short: 'Ăn',   cat: 'ess' },
+    hua:  { name: 'Việc đã hứa',        short: '',     cat: 'hua' },
+    uu1:  { name: 'Việc ưu tiên 1',     short: '1',    cat: 'uu' },
+    uu2:  { name: 'Việc ưu tiên 2',     short: '2',    cat: 'uu' },
+    uu3:  { name: 'Việc ưu tiên 3',     short: '3',    cat: 'uu' },
+    nho:  { name: 'Việc nhỏ',           short: 'Nhỏ',  cat: 'soft' },
+    vd:   { name: 'Vận động',           short: 'VĐ',   cat: 'soft' },
+    dp:   { name: 'Khoảng dự phòng',    short: 'DP',   cat: 'dp' }
+  };
+  var BASE = ['lop', 'bv', 'truc', 'dc', 'ngu', 'sh', 'hua'];          // dùng ở tuần mẫu
+  var PLAN = ['uu1', 'uu2', 'uu3', 'nho', 'vd', 'dp'];                 // chỉ có ở lịch tuần này
+  var NEEDNOTE = { hua: 'Ghi tên việc đã hứa để lát nữa bạn nhận ra nó trên lưới.', nho: 'Ghi việc nhỏ đó là việc gì.',
+                   uu1: 'Ghi rõ khung này làm gì. Đó là tiêu chí thứ tư của một lịch khả thi.' };
+  NEEDNOTE.uu2 = NEEDNOTE.uu3 = NEEDNOTE.uu1;
+  var CATNAME = { fixed: 'Giờ cố định', ess: 'Giờ thiết yếu', hua: 'Giờ còn lại đã có chủ', uu: 'Việc ưu tiên', soft: 'Việc nhỏ và vận động', dp: 'Khoảng dự phòng' };
+  var CATORDER = { uu: 0, soft: 1, dp: 2, fixed: 3, ess: 4, hua: 5 };
+  var CAUSES = {
+    thucte:   { name: 'Kế hoạch thiếu thực tế', sign: 'Xếp quá nhiều, đoán thiếu giờ, xếp việc nặng vào lúc mệt.', fix: 'Hướng sửa: bớt việc; dùng số giờ thực tế; lập ngược từ hạn chót.' },
+    chuaro:   { name: 'Việc chưa rõ', sign: 'Ngồi vào khung nhưng không biết bắt đầu từ đâu.', fix: 'Hướng sửa: viết lại hành động tiếp theo cho việc đó.' },
+    giandoan: { name: 'Gián đoạn ngoài dự kiến', sign: 'Khung bị mất vì đổi lịch, việc phát sinh.', fix: 'Hướng sửa: đặt khoảng dự phòng đúng chỗ; đặt quy tắc cho thông báo.' },
+    batdau:   { name: 'Khó bắt đầu', sign: 'Khung còn nguyên, không ai lấy mất, nhưng không làm.', fix: 'Hướng sửa: chẩn đoán lý do; viết câu “nếu… thì…”; thử một phiên 15 phút.' }
+  };
+  var RESNAME = { xong: 'Xong', phan: 'Một phần', chua: 'Chưa' };
+  var DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  var DAYNAMES = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
+  var CRIT = ['Giờ cố định được xếp vào trước', 'Có giờ ngủ ghi rõ', 'Tối đa ba việc ưu tiên, mỗi việc có hành động tiếp theo và khung giờ',
+              'Mỗi khung tự học ghi rõ làm gì', 'Có khoảng dự phòng', 'Có phương án cho ngày sau trực hoặc ngày nặng nhất'];
+
+  /* Dữ liệu mẫu lấy từ ca xuyên suốt của workshop (nhân vật minh họa).
+     Mỗi dòng: [loại, các ngày bắt đầu (0 = thứ Hai … 6 = Chủ nhật), từ, đến, ghi chú]. Đến ≤ từ nghĩa là sang ngày hôm sau. Loại rỗng nghĩa là xóa khoảng đó.
+     Giờ đã làm tròn theo ô 30 phút. */
+  var SAMPLES = {
+    an: {
+      who: 'An, Y4, đang đi đợt Ngoại khoa: sáng bệnh viện, ba buổi chiều lên lớp, trực đêm thứ Tư.',
+      rules: [
+        ['bv', '01234', '06:30', '11:30'], ['lop', '013', '13:30', '16:30'], ['truc', '2', '18:00', '06:30'],
+        ['dc', '01', '06:00', '06:30'], ['dc', '01', '17:00', '17:30'],
+        ['dc', '2', '06:00', '06:30'], ['dc', '2', '11:30', '12:00'], ['dc', '2', '17:30', '18:00'],
+        ['dc', '3', '17:00', '17:30'], ['dc', '4', '06:00', '06:30'], ['dc', '4', '11:30', '12:00'],
+        ['dc', '6', '14:00', '14:30'], ['dc', '6', '17:30', '18:00'],
+        ['ngu', '601', '23:00', '05:30'], ['ngu', '2', '13:00', '14:30', 'Ngủ trước trực'], ['ngu', '3', '12:00', '13:00', 'Ngủ bù'],
+        ['ngu', '3', '21:00', '05:30'], ['ngu', '45', '23:00', '06:30'],
+        ['sh', '01', '05:30', '06:00'], ['sh', '01', '11:30', '12:30'], ['sh', '01', '17:30', '18:30'],
+        ['sh', '2', '05:30', '06:00'], ['sh', '2', '12:00', '13:00'], ['sh', '2', '16:30', '17:30'],
+        ['sh', '3', '11:30', '12:00'], ['sh', '3', '13:00', '13:30'], ['sh', '3', '17:30', '19:00'],
+        ['sh', '4', '05:30', '06:00'], ['sh', '4', '12:00', '13:00'], ['sh', '4', '17:30', '18:30'],
+        ['sh', '5', '06:30', '07:30'], ['sh', '5', '12:00', '13:00'], ['sh', '5', '17:30', '18:00'],
+        ['sh', '6', '06:30', '07:30'], ['sh', '6', '12:00', '13:00'], ['sh', '6', '18:00', '18:30'],
+        ['hua', '14', '19:00', '21:00', 'Dạy kèm'], ['hua', '1', '18:30', '19:00', 'Soạn bài dạy'], ['hua', '6', '14:30', '17:30', 'Sinh hoạt câu lạc bộ']
+      ],
+      week: {
+        tasks: [
+          { name: 'Trình bệnh án sáng thứ Sáu', next: 'Viết phần bệnh sử, tiền sử và khám vào mẫu', later: false, guess: 160, last: 240, never: false },
+          { name: 'Ôn 4 bài lý thuyết Ngoại', next: 'Làm 30 câu trắc nghiệm bài viêm ruột thừa', later: true, guess: 360, last: 0, never: false },
+          { name: 'Phần trình bày ở câu lạc bộ', next: 'Viết dàn ý một trang', later: false, guess: 180, last: 0, never: false }
+        ],
+        heavy: { day: 3, text: 'Chỉ làm 20 thẻ nhớ ở giờ vụn; bỏ mọi khối ôn buổi tối; ngủ lúc 21:00.' },
+        review: { miss: [['2', '14:30'], ['2', '16:00'], ['4', '14:00'], ['5', '08:00']], res: [{ st: 'xong', act: 190 }, { st: 'phan', act: 180 }, { st: 'xong', act: 210 }], nights: 5, screen: 230, cause: 'thucte',
+          ex: 'Việc có hạn thứ Sáu được xếp xong ngay trước ca trực thứ Tư; chỉ cần buổi trưa đó bị giữ lại là không còn chỗ lùi.',
+          keep: 'Hai khối ôn buổi sáng cuối tuần; làm 30 câu ở khối trưa.',
+          change: 'Việc có hạn sau ngày trực phải xong trước ngày trực một ngày, và khoảng dự phòng đặt ngay sau khung cuối của việc đó.', kept: '', ctrl: 3 },
+        rules: [
+          ['uu2', '0', '12:30', '13:30', 'Làm 30 câu bài viêm ruột thừa'], ['nho', '0', '16:30', '17:00', 'Thẻ nhớ'],
+          ['uu1', '0', '18:30', '20:00', 'Bệnh án bước 1: bệnh sử, tiền sử, khám'], ['uu2', '0', '20:00', '21:00', 'Chấm và đọc lại phần sai bài 1'],
+          ['uu1', '1', '12:30', '13:30', 'Bệnh án bước 2: đọc lý thuyết, ghi 5 câu có thể bị hỏi'], ['dp', '1', '21:00', '22:00'],
+          ['uu1', '2', '14:30', '16:00', 'Bệnh án bước 3: tóm tắt, đặt vấn đề, biện luận'], ['uu1', '2', '16:00', '16:30', 'Nói thử một lần, bấm giờ'],
+          ['nho', '3', '16:30', '17:00', '20 thẻ nhớ'],
+          ['uu2', '4', '14:00', '15:30', 'Bài 2: làm 30 câu, chấm, đọc lại phần sai'], ['uu3', '4', '15:30', '16:30', 'Viết dàn ý một trang'],
+          ['vd', '45', '17:00', '17:30', 'Chạy bộ'],
+          ['uu2', '5', '08:00', '09:30', 'Bài 3: làm 30 câu, chấm, đọc lại phần sai'], ['uu3', '5', '09:30', '11:30', 'Làm 8 slide'],
+          ['dp', '5', '14:00', '15:00'], ['uu3', '5', '16:00', '16:30', 'Nói thử hai lần, đúng 10 phút'], ['hua', '5', '18:30', '21:30', 'Sinh nhật bạn'],
+          ['vd', '6', '07:30', '08:00', 'Chạy bộ'], ['uu2', '6', '09:00', '10:30', 'Bài 4: làm 30 câu, chấm, đọc lại phần sai'],
+          ['nho', '6', '20:00', '20:30', 'Rà soát tuần, phiếu BM08']
+        ]
+      }
+    },
+    minh: {
+      who: 'Minh, Y2, chưa đi bệnh viện: sáng lý thuyết, ba buổi chiều thực hành, đi xe buýt 60 phút mỗi lượt.',
+      rules: [
+        ['lop', '01234', '07:00', '11:00', 'Lý thuyết'], ['lop', '023', '13:30', '16:30', 'Thực hành'],
+        ['dc', '01234', '06:00', '07:00'], ['dc', '023', '16:30', '17:30'], ['dc', '14', '11:00', '12:00'],
+        ['dc', '13', '18:30', '19:00'], ['dc', '13', '20:30', '21:00'], ['dc', '6', '13:30', '14:30'], ['dc', '6', '17:30', '18:30'],
+        ['ngu', '60123', '22:30', '05:30'], ['ngu', '45', '22:30', '06:30'],
+        ['sh', '01234', '05:30', '06:00'], ['sh', '023', '11:00', '12:00'], ['sh', '14', '12:00', '13:00'],
+        ['sh', '0123', '17:30', '18:30'], ['sh', '4', '18:00', '19:00'],
+        ['sh', '56', '06:30', '07:30'], ['sh', '56', '12:00', '13:00'], ['sh', '56', '18:30', '19:00'],
+        ['hua', '13', '19:00', '20:30', 'Lớp tiếng Anh'], ['hua', '1', '16:00', '17:00', 'Bài tập tiếng Anh'],
+        ['hua', '02', '12:00', '13:00', 'Làm poster'], ['hua', '6', '14:30', '17:30', 'Sinh hoạt câu lạc bộ']
+      ],
+      week: {
+        tasks: [
+          { name: 'Giải phẫu chi trên và chi dưới', next: 'Tự vẽ lại đám rối thần kinh cánh tay, không nhìn sách, rồi đối chiếu', later: true, guess: 320, last: 0, never: true },
+          { name: 'Ôn kiểm tra Sinh lý', next: 'Làm bộ câu hỏi bài 1 và tự giảng lại ba ý khó', later: false, guess: 300, last: 0, never: false },
+          { name: 'Slide bài nhóm', next: 'Đọc yêu cầu của bài, viết ba ý chính và dàn ý một trang', later: false, guess: 180, last: 0, never: false }
+        ],
+        heavy: { day: 3, text: 'Chỉ làm hai khung Sinh lý đã ghi; bỏ mọi việc khác; ngủ đúng 22:30 dù chưa ôn hết.' },
+        review: { miss: [['1', '13:00'], ['5', '08:00'], ['5', '15:00']], res: [{ st: 'phan', act: 300 }, { st: 'xong', act: 300 }, { st: 'xong', act: 210 }], nights: 6, screen: 0, cause: 'batdau',
+          ex: 'Hai khung bị mất đều là khung phải tự bắt đầu một mình, và một khung nằm ngay sau bữa trưa.',
+          keep: 'Không học sau 22:00; ngủ đủ trước ngày kiểm tra; học ở thư viện khi có bạn ở lại cùng.',
+          change: 'Khung Giải phẫu thứ Ba hẹn trước một bạn cùng ở lại thư viện, và bắt đầu bằng một việc 10 phút là vẽ một sơ đồ.', kept: '', ctrl: 4 },
+        rules: [
+          ['sh', '14', '11:00', '12:00', 'Ăn trưa ở trường'], ['', '14', '12:00', '13:00'], ['dc', '14', '15:00', '16:00'],
+          ['uu2', '0', '19:30', '21:00', 'Sinh lý bài 1: làm bộ câu hỏi, tự giảng lại ba ý khó'],
+          ['uu1', '1', '13:00', '15:00', 'Giải phẫu bước 1: vẽ đám rối thần kinh cánh tay, làm 15 câu, ở thư viện'],
+          ['uu2', '2', '19:30', '21:00', 'Sinh lý bài 2: làm bộ câu hỏi'], ['dp', '2', '21:00', '22:00'],
+          ['uu2', '3', '12:00', '13:00', 'Sinh lý bài 3: làm bộ câu hỏi'], ['uu2', '3', '21:00', '22:00', 'Làm lại các câu Sinh lý đã sai'],
+          ['uu1', '4', '13:00', '15:00', 'Giải phẫu bước 2: mạch máu và cơ chi trên, ở thư viện'],
+          ['uu1', '5', '08:00', '10:00', 'Giải phẫu bước 3: thần kinh chi dưới'], ['uu3', '5', '10:30', '12:00', 'Slide phần 1: đọc yêu cầu, ba ý chính, dàn ý'],
+          ['uu3', '5', '15:00', '16:30', 'Slide phần 2, gửi nhóm trưởng trước 17:00'], ['vd', '5', '17:00', '18:30', 'Đá bóng'],
+          ['uu1', '6', '08:00', '10:00', 'Giải phẫu bước 4: mạch máu và cơ chi dưới'], ['dp', '6', '10:30', '12:00'],
+          ['nho', '6', '20:00', '20:30', 'Rà soát tuần, phiếu BM08']
+        ]
+      }
+    }
+  };
+  /* ===================================================================== hết phần cấu hình */
+
+  var N = 336;                       // 7 ngày × 48 ô 30 phút, bắt đầu từ 00:00 thứ Hai
+  var $ = function (id) { return document.getElementById(id); };
+  var IN_VIEWER = (function () { try { return !!window.claude || /claude|anthropic/i.test(location.hostname); } catch (e) { return true; } })();
+
+  // ---------- tiện ích
+  function t2s(t) { var p = t.split(':'); return (+p[0]) * 2 + (+p[1] >= 30 ? 1 : 0); }
+  function s2t(s) { var h = Math.floor(s / 2); return (h < 10 ? '0' : '') + h + ':' + (s % 2 ? '30' : '00'); }
+  function fmt(h) { var r = Math.round(h * 10) / 10; return (r % 1 ? r.toFixed(1) : String(r)).replace('.', ','); }
+  function typeOf(v) { return v ? v.split('|')[0] : ''; }
+  function noteOf(v) { var i = v.indexOf('|'); return i < 0 ? '' : v.slice(i + 1); }
+  function catOf(v) { return v ? TYPES[typeOf(v)].cat : 'free'; }
+  function val(type, note) { if (!type) return ''; note = (note || '').replace(/\|/g, ' ').trim(); return note ? type + '|' + note : type; }
+  function labelOf(v) { return noteOf(v) || TYPES[typeOf(v)].name; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function blank() { var a = []; for (var i = 0; i < N; i++) a.push(''); return a; }
+  function spanLen(start, end) { return end > start ? end - start : 48 - start + end; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseYmd(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function mondayOf(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  function upcomingMonday() { var t = new Date(), m = mondayOf(t); if (ymd(m) !== ymd(t)) m.setDate(m.getDate() + 7); return ymd(m); }
+  function dmy(s) { var p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  function mins(m) { return m + ' phút' + (m >= 60 ? ' (' + fmt(m / 60) + ' giờ)' : ''); }
+
+  function paint(slots, v, days, start, len) {
+    days.forEach(function (d) { for (var k = 0; k < len; k++) slots[(d * 48 + start + k) % N] = v; });
+  }
+  function fromRules(rules, base) {
+    var s = base ? base.slice() : blank();
+    rules.forEach(function (r) {
+      var a = t2s(r[2]), b = t2s(r[3]);
+      paint(s, val(r[0], r[4]), r[1].split('').map(Number), a, spanLen(a, b));
+    });
+    return s;
+  }
+  function fmtDays(days) {
+    days = days.slice().sort(function (a, b) { return a - b; });
+    if (days.length === 7) return 'Mỗi ngày';
+    var runs = [], i = 0;
+    while (i < days.length) { var j = i; while (j + 1 < days.length && days[j + 1] === days[j] + 1) j++; runs.push(j - i >= 2 ? DAYS[days[i]] + '–' + DAYS[days[j]] : days.slice(i, j + 1).map(function (d) { return DAYS[d]; }).join(', ')); i = j + 1; }
+    return runs.join(', ');
+  }
+  function fmtRange(start, len) { var e = start + len; return s2t(start) + '–' + (e === 48 ? '24:00' : s2t(e % 48)) + (e > 48 ? ' hôm sau' : ''); }
+
+  // Các đoạn liền nhau cùng giá trị trên cả tuần (tuần nối vòng: đêm Chủ nhật nối sang sáng thứ Hai)
+  function weekRuns(slots) {
+    var b = -1, k;
+    for (k = 0; k < N; k++) if (slots[k] !== slots[(k + N - 1) % N]) { b = k; break; }
+    if (b < 0) return [{ v: slots[0], at: 0, len: N }];
+    var runs = [], done = 0, i = b;
+    while (done < N) { var v = slots[i % N], j = 0; while (done + j < N && slots[(i + j) % N] === v) j++; runs.push({ v: v, at: i % N, len: j }); i += j; done += j; }
+    return runs;
+  }
+  // Gom các đoạn giống hệt nhau (cùng loại, ghi chú, giờ bắt đầu, độ dài) ở nhiều ngày thành một khối để hiển thị và sửa
+  function groups(slots) {
+    var map = {}, out = [];
+    weekRuns(slots).forEach(function (r) {
+      if (!r.v) return;
+      var key = r.v + '@' + (r.at % 48) + '+' + r.len;
+      if (!map[key]) { map[key] = { v: r.v, start: r.at % 48, len: r.len, days: [] }; out.push(map[key]); }
+      map[key].days.push(Math.floor(r.at / 48));
+    });
+    out.sort(function (a, b) {
+      return CATORDER[catOf(a.v)] - CATORDER[catOf(b.v)] || (catOf(a.v) === 'uu' ? typeOf(a.v).localeCompare(typeOf(b.v)) || Math.min.apply(0, a.days) - Math.min.apply(0, b.days) : 0) ||
+        a.start - b.start || Math.min.apply(0, a.days) - Math.min.apply(0, b.days);
+    });
+    return out;
+  }
+  function dayRuns(slots, d) {
+    var runs = [], i = 0;
+    while (i < 48) { var v = slots[d * 48 + i], j = i; while (j < 48 && slots[d * 48 + j] === v) j++; runs.push({ v: v, start: i, len: j - i }); i = j; }
+    return runs;
+  }
+  function stats(slots) {
+    var t = { fixed: 0, ess: 0, hua: 0, uu: 0, soft: 0, dp: 0, free: 0, by: {}, days: [], blocks: 0, blockH: 0, scraps: 0, longest: null, huaNames: [] };
+    for (var d = 0; d < 7; d++) t.days.push({ fixed: 0, ess: 0, rest: 0, ngu: 0 });
+    for (var i = 0; i < N; i++) {
+      var v = slots[i], c = catOf(v), dd = t.days[Math.floor(i / 48)];
+      t[c] += 0.5;
+      if (v) { var ty = typeOf(v); t.by[ty] = (t.by[ty] || 0) + 0.5; if (ty === 'ngu') dd.ngu += 0.5; }
+      if (c === 'fixed') dd.fixed += 0.5; else if (c === 'ess') dd.ess += 0.5; else dd.rest += 0.5;
+      if (c === 'hua' && t.huaNames.indexOf(labelOf(v)) < 0) t.huaNames.push(labelOf(v));
+    }
+    t.rest = 168 - t.fixed - t.ess;                 // giờ còn lại
+    t.planned = t.uu + t.soft + t.dp;               // đã xếp trong kế hoạch tuần
+    var run = 0, at = 0;
+    for (var k = 0; k <= N; k++) {
+      if (k < N && slots[k] === '') { if (!run) at = k; run++; continue; }
+      if (run >= CFG.blockMinSlots) { t.blocks++; t.blockH += run / 2; if (!t.longest || run > t.longest.len) t.longest = { at: at, len: run }; }
+      else if (run > 0) t.scraps += run;
+      run = 0;
+    }
+    return t;
+  }
+
+  // ---------- việc ưu tiên và sáu tiêu chí
+  function blankTask() { return { name: '', next: '', later: false, guess: 0, last: 0, never: false }; }
+  function need(t) { return t.never ? Math.round((t.guess || 0) * CFG.addHalf) : Math.max(t.guess || 0, t.last || 0); }
+  function suggestHeavy(slots, st) {
+    var runs = weekRuns(slots);
+    for (var i = 0; i < runs.length; i++) if (typeOf(runs[i].v) === 'truc') {
+      var d0 = Math.floor(runs[i].at / 48), d1 = Math.floor(((runs[i].at + runs[i].len - 1) % N) / 48);
+      return { day: d1 !== d0 ? d1 : (d0 + 1) % 7, why: 'ngày sau trực' };
+    }
+    var best = 0; for (var d = 1; d < 7; d++) if (st.days[d].fixed > st.days[best].fixed) best = d;
+    return st.days[best].fixed ? { day: best, why: 'ngày nhiều giờ cố định nhất' } : null;
+  }
+  function check(week) {
+    var slots = week.slots, st = stats(slots), runs = weekRuns(slots), out = [], i;
+    // 1
+    out.push({ ok: st.fixed > 0, detail: st.fixed > 0 ? fmt(st.fixed) + ' giờ cố định đã nằm trên lịch.' : 'Chưa có giờ cố định nào. Nếu tuần này bạn không có lịch học, tiêu chí này không áp dụng.' });
+    // 2
+    var noSleep = [], minD = 0;
+    for (i = 0; i < 7; i++) { if (!st.days[i].ngu) noSleep.push(DAYS[i]); if (st.days[i].ngu < st.days[minD].ngu) minD = i; }
+    out.push({ ok: !noSleep.length, detail: noSleep.length ? 'Chưa ghi giờ ngủ cho: ' + noSleep.join(', ') + '.' : 'Ngủ trung bình ' + fmt((st.by.ngu || 0) / 7) + ' giờ mỗi ngày; ít nhất là ' + DAYNAMES[minD] + ', ' + fmt(st.days[minD].ngu) + ' giờ.' });
+    // 3
+    var named = 0, miss = [];
+    week.tasks.forEach(function (t, k) {
+      var has = !!st.by['uu' + (k + 1)];
+      if (t.name.trim()) { named++; if (!t.next.trim()) miss.push('việc ' + (k + 1) + ' chưa có hành động tiếp theo'); if (!has) miss.push('việc ' + (k + 1) + ' chưa có khung giờ'); }
+      else if (has) miss.push('có khung của việc ' + (k + 1) + ' nhưng việc này chưa có tên');
+    });
+    if (!named) miss.unshift('chưa có việc ưu tiên nào');
+    out.push({ ok: !miss.length, detail: miss.length ? miss.join('; ').replace(/^./, function (c) { return c.toUpperCase(); }) + '.' : named + ' việc ưu tiên, việc nào cũng có hành động tiếp theo và khung giờ.' });
+    // 4
+    var study = 0, vague = 0;
+    runs.forEach(function (r) {
+      var ty = typeOf(r.v); if (ty.slice(0, 2) !== 'uu' && ty !== 'nho') return;
+      study++;
+      var note = noteOf(r.v).trim().toLowerCase(), task = ty.slice(0, 2) === 'uu' ? week.tasks[+ty.slice(2) - 1].name.trim().toLowerCase() : '';
+      if (!note || (task && note === task)) vague++;
+    });
+    out.push({ ok: study > 0 && !vague, detail: !study ? 'Chưa có khung tự học nào trên lịch.' : vague ? vague + ' trên ' + study + ' khung chưa ghi rõ làm gì, hoặc chỉ chép lại tên việc.' : 'Cả ' + study + ' khung đều ghi rõ làm gì.' });
+    // 5
+    var dps = runs.filter(function (r) { return typeOf(r.v) === 'dp' && r.len >= CFG.dpMinSlots; });
+    var shortDp = runs.filter(function (r) { return typeOf(r.v) === 'dp' && r.len < CFG.dpMinSlots; }).length;
+    out.push({ ok: dps.length >= CFG.dpMinCount, detail: dps.length ? dps.length + ' khoảng: ' + dps.map(function (r) { return DAYNAMES[Math.floor(r.at / 48)] + ' ' + fmtRange(r.at % 48, r.len); }).join('; ') + '.' + (dps.length < CFG.dpMinCount ? ' Cần ít nhất ' + CFG.dpMinCount + ' khoảng, mỗi khoảng từ 60 phút.' : '') : (shortDp ? 'Có ' + shortDp + ' khoảng dự phòng nhưng ngắn hơn 60 phút. ' : 'Chưa có khoảng dự phòng. ') + 'Cần ít nhất ' + CFG.dpMinCount + ' khoảng, mỗi khoảng từ 60 phút.' });
+    // 6
+    var hv = week.heavy, sg = suggestHeavy(slots, st);
+    out.push({ ok: hv.day >= 0 && !!hv.text.trim(), detail: hv.day >= 0 && hv.text.trim() ? DAYNAMES[hv.day] + ': ' + hv.text.trim() : 'Chưa ghi ngày đó chỉ làm gì, bỏ gì.' + (sg ? ' Gợi ý: ' + DAYNAMES[sg.day] + ', ' + sg.why + '.' : '') });
+    var score = out.filter(function (c) { return c.ok; }).length;
+    return { items: out, score: score, pass: score >= CFG.passScore, st: st, dps: dps };
+  }
+  function reminders(week, st) {
+    var out = [], named = week.tasks.filter(function (t) { return t.name.trim(); });
+    if (named.length && !named.some(function (t) { return t.later; })) out.push('Chưa có việc nào quan trọng nhưng chưa khẩn. Quy tắc của workshop: trong ba việc phải có ít nhất một việc như vậy.');
+    week.tasks.forEach(function (t, k) {
+      var n = need(t), got = (st.by['uu' + (k + 1)] || 0) * 60;
+      if (t.name.trim() && n && got < n) out.push('Việc ' + (k + 1) + ' cần ' + n + ' phút, mới xếp ' + got + ' phút.');
+    });
+    return out;
+  }
+
+  // ---------- xuất tệp .ics
+  function icsEsc(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+  function icsFold(line) { var out = []; while (line.length > 60) { out.push(line.slice(0, 60)); line = ' ' + line.slice(60); } out.push(line); return out.join('\r\n'); }
+  function icsEvents(week) {
+    var mon = parseYmd(week.monday), ev = [];
+    weekRuns(week.slots).forEach(function (r) {
+      var c = catOf(r.v); if (c !== 'uu' && c !== 'soft' && c !== 'dp') return;
+      var ty = typeOf(r.v), a = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate(), 0, r.at * 30), b = new Date(a.getTime() + r.len * 30 * 60000), sum, desc = '';
+      if (c === 'uu') { var t = week.tasks[+ty.slice(2) - 1]; sum = noteOf(r.v) || t.name || TYPES[ty].name; desc = 'Việc ưu tiên ' + ty.slice(2) + (t.name ? ': ' + t.name : ''); }
+      else if (c === 'dp') { sum = 'Dự phòng (DP)'; desc = 'Khoảng dự phòng: để trống cho việc phát sinh hoặc việc bị lùi.'; }
+      else sum = labelOf(r.v);
+      ev.push({ a: a, b: b, sum: sum, desc: desc, at: r.at });
+    });
+    ev.sort(function (x, y) { return x.a - y.a; });
+    return ev;
+  }
+  function icsText(week) {
+    function dt(d) { return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00'; }
+    var now = new Date(), stamp = now.getUTCFullYear() + pad(now.getUTCMonth() + 1) + pad(now.getUTCDate()) + 'T' + pad(now.getUTCHours()) + pad(now.getUTCMinutes()) + pad(now.getUTCSeconds()) + 'Z';
+    var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CLB Ngoai khoa Trung Vuong//Lich tuan kha thi//VI', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    icsEvents(week).forEach(function (e) {
+      L.push('BEGIN:VEVENT', 'UID:ltkt-' + week.monday + '-' + e.at + '@lich-tuan-kha-thi', 'DTSTAMP:' + stamp, 'DTSTART:' + dt(e.a), 'DTEND:' + dt(e.b), icsFold('SUMMARY:' + icsEsc(e.sum)));
+      if (e.desc) L.push(icsFold('DESCRIPTION:' + icsEsc(e.desc)));
+      L.push('END:VEVENT');
+    });
+    L.push('END:VCALENDAR');
+    return L.join('\r\n') + '\r\n';
+  }
+
+  // ---------- trạng thái và lưu trữ
+  function blankReview() { return { done: {}, res: [{ st: '', act: 0 }, { st: '', act: 0 }, { st: '', act: 0 }], nights: -1, screen: 0, cause: '', ex: '', keep: '', change: '', kept: '', ctrl: 0 }; }
+  function cleanReview(r) {
+    var o = blankReview(); if (!r) return o;
+    Object.keys(r.done || {}).forEach(function (k) { if (r.done[k] && /^\d+$/.test(k) && +k < N) o.done[k] = true; });
+    o.res = [0, 1, 2].map(function (i) { var x = (r.res || [])[i] || {}; return { st: RESNAME[x.st] ? x.st : '', act: Math.max(0, +x.act || 0) }; });
+    o.nights = r.nights >= 0 && r.nights <= 7 ? +r.nights : -1; o.screen = Math.max(0, +r.screen || 0); o.cause = CAUSES[r.cause] ? r.cause : '';
+    o.ex = String(r.ex || ''); o.keep = String(r.keep || ''); o.change = String(r.change || ''); o.kept = r.kept === 'co' || r.kept === 'chua' ? r.kept : ''; o.ctrl = r.ctrl >= 1 && r.ctrl <= 5 ? +r.ctrl : 0;
+    return o;
+  }
+  function newWeek(template, tasks) { return { monday: upcomingMonday(), slots: template.slice(), tasks: tasks || [blankTask(), blankTask(), blankTask()], heavy: { day: -1, text: '' }, review: blankReview() }; }
+  function cloneWeek(w) { return { monday: w.monday, slots: w.slots.slice(), tasks: w.tasks.map(function (t) { return { name: t.name, next: t.next, later: !!t.later, guess: +t.guess || 0, last: +t.last || 0, never: !!t.never }; }), heavy: { day: w.heavy.day, text: w.heavy.text }, review: cleanReview(w.review) }; }
+  var sample = {};
+  Object.keys(SAMPLES).forEach(function (k) {
+    var tpl = fromRules(SAMPLES[k].rules), w = SAMPLES[k].week;
+    var slots = fromRules(w.rules, tpl), rv = w.review, done = {}, miss = {};
+    rv.miss.forEach(function (m) { miss[+m[0] * 48 + t2s(m[1])] = true; });
+    weekRuns(slots).forEach(function (r) { if (catOf(r.v) === 'uu' && !miss[r.at]) done[r.at] = true; });
+    sample[k] = { template: tpl, history: [], week: cloneWeek({ monday: upcomingMonday(), slots: slots, tasks: w.tasks, heavy: w.heavy,
+      review: { done: done, res: rv.res, nights: rv.nights, screen: rv.screen, cause: rv.cause, ex: rv.ex, keep: rv.keep, change: rv.change, kept: rv.kept, ctrl: rv.ctrl } }) };
+  });
+  var state = { active: 'an', view: 'mau', mine: { template: blank(), week: null, history: [] } }, storageOK = true, undo = { mau: [], lich: [] }, selKey = '';
+  function cleanSlots(a) { return a && a.length === N ? a.map(function (v) { return typeof v === 'string' && (!v || TYPES[typeOf(v)]) ? v : ''; }) : null; }
+  function isYmd(x) { return /^\d{4}-\d{2}-\d{2}$/.test(x); }
+  function parseMine(m) {
+    var out = { template: blank(), week: null, history: [] };
+    if (Array.isArray(m)) { var t1 = cleanSlots(m); if (!t1) return null; out.template = t1; return out; }       // bản lưu của bước 1
+    if (!m || typeof m !== 'object') return null;
+    var t2 = cleanSlots(m.template); if (t2) out.template = t2;
+    if (m.week && cleanSlots(m.week.slots)) {
+      var w = m.week, tasks = [0, 1, 2].map(function (i) { var t = (w.tasks || [])[i] || {}; return { name: String(t.name || ''), next: String(t.next || ''), later: !!t.later, guess: +t.guess || 0, last: +t.last || 0, never: !!t.never }; });
+      out.week = { monday: isYmd(w.monday) ? w.monday : upcomingMonday(), slots: cleanSlots(w.slots), tasks: tasks,
+        heavy: { day: w.heavy && w.heavy.day >= 0 && w.heavy.day < 7 ? +w.heavy.day : -1, text: String((w.heavy && w.heavy.text) || '') }, review: cleanReview(w.review) };
+    }
+    (Array.isArray(m.history) ? m.history : []).slice(0, 26).forEach(function (h) {
+      if (h && isYmd(h.monday)) out.history.push({ monday: h.monday, total: Math.max(0, +h.total || 0), done: Math.max(0, +h.done || 0), cause: CAUSES[h.cause] ? h.cause : '', change: String(h.change || '') });
+    });
+    return out;
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(CFG.storageKey); if (!raw) return;
+      var o = JSON.parse(raw); if (!o) return;
+      var m = parseMine(o.mine); if (m) state.mine = m;
+      if (o.active === 'an' || o.active === 'minh' || o.active === 'toi') state.active = o.active;
+      if (o.view === 'mau' || o.view === 'viec' || o.view === 'lich' || o.view === 'ra') state.view = o.view;
+    } catch (e) { storageOK = false; }
+  }
+  function save() {
+    try { localStorage.setItem(CFG.storageKey, JSON.stringify({ v: 3, active: state.active, view: state.view, mine: state.mine })); storageOK = true; }
+    catch (e) { storageOK = false; }
+  }
+  function isMine() { return state.active === 'toi'; }
+  function cur() { return isMine() ? state.mine : sample[state.active]; }
+  function tplEmpty() { return state.mine.template.every(function (v) { return !v; }); }
+  function ensureWeek() { if (isMine() && !state.mine.week && !tplEmpty()) { state.mine.week = newWeek(state.mine.template); save(); } return cur().week; }
+  function viewSlots() { return state.view === 'mau' ? cur().template : (cur().week ? cur().week.slots : null); }
+  function commit(next) {
+    var key = state.view === 'mau' ? 'mau' : 'lich', st = undo[key];
+    st.push(viewSlots().slice()); if (st.length > 30) st.shift();
+    if (key === 'mau') state.mine.template = next; else state.mine.week.slots = next;
+    save(); render();
+  }
+
+  // ---------- hiển thị chung
+  function drawWeek(headId, bodyId, slots, empty) {
+    $(headId).innerHTML = '<span></span>' + DAYS.map(function (d, i) { return '<span title="' + DAYNAMES[i] + '">' + d + '</span>'; }).join('');
+    var html = '<div class="wk-time" aria-hidden="true">';
+    for (var h = 2; h < 24; h += 2) html += '<span style="top:calc(var(--rh)*' + (h * 2) + ')">' + (h < 10 ? '0' : '') + h + '</span>';
+    html += '</div>';
+    for (var d = 0; d < 7; d++) {
+      html += '<div class="wk-day">';
+      dayRuns(slots, d).forEach(function (r) {
+        var c = catOf(r.v), cls, sm, lg, aria;
+        if (c === 'free') {
+          var big = !empty && r.len >= CFG.blockMinSlots;
+          cls = big ? 'free' : 'scrap'; sm = big ? fmt(r.len / 2) + 'h' : ''; lg = big ? fmt(r.len / 2) + ' giờ' : '';   // màn hình hẹp: “1,5h” để khỏi lẫn với số của việc ưu tiên
+          aria = DAYNAMES[d] + ', ' + fmtRange(r.start, r.len) + ', ' + (big ? 'còn trống ' + fmt(r.len / 2) + ' giờ' : (empty ? 'chưa nhập' : 'giờ vụn'));
+        } else {
+          var ty = typeOf(r.v), note = noteOf(r.v), tall = r.len >= 2 || c === 'dp';
+          cls = c; sm = tall ? TYPES[ty].short : '';
+          lg = tall ? (c === 'uu' ? TYPES[ty].short + ' · ' + (note || '?') : (c === 'dp' ? 'DP' : (note || TYPES[ty].short))) : '';
+          aria = DAYNAMES[d] + ', ' + fmtRange(r.start, r.len) + ', ' + (c === 'uu' ? TYPES[ty].name + ': ' + (note || 'chưa ghi làm gì') : labelOf(r.v));
+        }
+        html += '<button type="button" class="blk ' + cls + (d + ':' + r.start === selKey ? ' sel' : '') + '" style="top:calc(var(--rh)*' + r.start + ');height:calc(var(--rh)*' + r.len + ')"' +
+          ' data-d="' + d + '" data-s="' + r.start + '" data-l="' + r.len + '" aria-label="' + esc(aria) + '" title="' + esc(aria) + '">' +
+          '<span class="sm">' + esc(sm) + '</span><span class="lg">' + esc(lg) + '</span></button>';
+      });
+      html += '</div>';
+    }
+    $(bodyId).innerHTML = html;
+  }
+  function ruleHtml(g, i) {
+    var c = catOf(g.v), ty = typeOf(g.v), note = noteOf(g.v);
+    return '<li><button type="button" class="rule" data-g="' + i + '"><span class="sw ' + c + '"></span><b>' + esc(c === 'uu' ? (note || 'Chưa ghi làm gì') : labelOf(g.v)) + '</b>' +
+      '<span class="h">' + fmt(g.len / 2 * g.days.length) + ' giờ</span><small>' + (c === 'uu' ? esc(TYPES[ty].name) + ' · ' : '') + esc(fmtDays(g.days)) + ' · ' + fmtRange(g.start, g.len) +
+      (c !== 'uu' && note ? ' · ' + esc(TYPES[ty].name.toLowerCase()) : '') + '</small></button></li>';
+  }
+  function drawRules(elId, gs, cats, emptyHtml) {
+    var html = '', last = '';
+    gs.forEach(function (g, i) {
+      var c = catOf(g.v); if (cats.indexOf(c) < 0) return;
+      if (c !== last) { html += '<li><h3>' + CATNAME[c] + '</h3></li>'; last = c; }
+      html += ruleHtml(g, i);
+    });
+    $(elId).innerHTML = html || emptyHtml || '';
+  }
+
+  function render() {
+    armedBtn = '';
+    var mine = isMine(), v = state.view;
+    Array.prototype.forEach.call(document.querySelectorAll('.set'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-set') === state.active)); });
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === v)); });
+    $('setnote').hidden = mine;
+    if (!mine) $('setnote-text').textContent = 'Dữ liệu mẫu, không phải của bạn. ' + SAMPLES[state.active].who;
+    $('btn-copy').textContent = 'Chép sang “Của tôi” để sửa';
+    $('v-mau').hidden = v !== 'mau'; $('v-viec').hidden = v !== 'viec'; $('v-lich').hidden = v !== 'lich'; $('v-ra').hidden = v !== 'ra';
+    $('btn-bk-restore').textContent = 'Khôi phục';
+    if (v === 'mau') renderMau(); else { ensureWeek(); if (v === 'viec') renderViec(); else if (v === 'lich') renderLich(); else renderRa(); }
+  }
+
+  // ---------- 1 · tuần mẫu
+  function renderMau() {
+    var slots = cur().template, st = stats(slots), mine = isMine(), empty = mine && tplEmpty();
+    $('btn-add').hidden = !mine; $('btn-undo').hidden = !mine; $('btn-undo').disabled = !undo.mau.length;
+    $('btn-clear').hidden = !mine || empty; $('btn-clear').textContent = 'Xóa hết';
+    $('wk-hint').textContent = mine
+      ? (empty ? 'Bắt đầu từ thứ không dời được: lớp, bệnh viện, trực, di chuyển. Rồi đến giờ ngủ và giờ ăn.' : 'Chạm vào một khối để sửa. Chạm vào ô trống để thêm giờ.')
+      : 'Chạm vào một khối để xem chi tiết.';
+    renderSum(st, empty); drawWeek('wk-head', 'wk-body', slots, empty);
+    drawRules('rules', groups(slots), ['fixed', 'ess', 'hua'],
+      '<li class="empty"><p><b>Chưa có khối nào.</b> Bấm “Thêm giờ” để nhập giờ lên lớp hoặc bệnh viện trước. Một khối có thể chọn nhiều ngày cùng lúc.</p><p>Muốn xem một tuần đã nhập sẵn, chọn mẫu An hoặc Minh ở trên.</p></li>');
+    $('foot').textContent = footText(mine);
+  }
+  function footText(mine) { return mine ? (storageOK ? 'Dữ liệu được lưu trên máy này, trong trình duyệt bạn đang dùng. Không gửi đi đâu.' : 'Trình duyệt không cho lưu. Dữ liệu sẽ mất khi bạn đóng trang.') : ''; }
+  function renderSum(st, empty) {
+    $('s-free').textContent = fmt(st.rest);
+    $('s-free-note').textContent = empty ? 'giờ trong một tuần. Nhập giờ cố định và giờ ngủ để thấy phần còn lại của bạn.' : 'giờ còn lại mỗi tuần, khoảng ' + fmt(st.rest / 7) + ' giờ mỗi ngày';
+    $('s-legend').hidden = $('s-facts').hidden = empty;
+    var segs = [['fixed', st.fixed], ['ess', st.ess], ['free', st.rest]];
+    $('s-bar').innerHTML = segs.map(function (s) { return s[1] ? '<i class="' + s[0] + '" style="flex:' + s[1] + ' 0 0">' + fmt(s[1]) + '</i>' : ''; }).join('');
+    $('s-bar').setAttribute('aria-label', 'Cố định ' + fmt(st.fixed) + ' giờ, thiết yếu ' + fmt(st.ess) + ' giờ, còn lại ' + fmt(st.rest) + ' giờ');
+    function parts(keys) { return keys.filter(function (k) { return st.by[k]; }).map(function (k) { return TYPES[k].name.toLowerCase() + ' ' + fmt(st.by[k]); }).join(' · ') || 'chưa nhập'; }
+    $('s-legend').innerHTML =
+      '<li><span class="sw fixed"></span><b>Giờ cố định</b><span class="n">' + fmt(st.fixed) + ' giờ</span><small>' + esc(parts(['lop', 'bv', 'truc', 'dc'])) + '</small></li>' +
+      '<li><span class="sw ess"></span><b>Giờ thiết yếu</b><span class="n">' + fmt(st.ess) + ' giờ</span><small>' + esc(parts(['ngu', 'sh'])) + (st.by.ngu ? ' · ngủ trung bình ' + fmt(st.by.ngu / 7) + ' giờ mỗi ngày' : '') + '</small></li>' +
+      '<li><span class="sw free"></span><b>Giờ còn lại</b><span class="n">' + fmt(st.rest) + ' giờ</span><small>168 − ' + fmt(st.fixed) + ' − ' + fmt(st.ess) + '</small></li>';
+    var lg = st.longest, facts = [];
+    facts.push(['Đã có chủ' + (st.huaNames.length ? ' (' + st.huaNames.join(', ').toLowerCase() + ')' : ''), fmt(st.hua) + ' giờ']);
+    facts.push(['Bạn tự sắp xếp được', fmt(st.rest - st.hua) + ' giờ']);
+    facts.push(['Khối tự quyết, từ 60 phút liền', st.blocks + ' khối · ' + fmt(st.blockH) + ' giờ']);
+    if (lg) facts.push(['Khối dài nhất', DAYNAMES[Math.floor(lg.at / 48)] + ' ' + s2t(lg.at % 48) + ', ' + fmt(lg.len / 2) + ' giờ']);
+    facts.push(['Giờ vụn, 30 phút kẹp giữa hai việc', st.scraps + ' ô']);
+    $('s-facts').innerHTML = facts.map(function (f) { return '<div><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>'; }).join('');
+    $('s-steps').innerHTML =
+      '<li class="' + (st.fixed ? 'ok' : '') + '"><span><b>Giờ cố định</b> xếp vào trước: lớp, bệnh viện, trực, di chuyển.</span></li>' +
+      '<li class="' + (st.by.ngu && st.by.sh ? 'ok' : '') + '"><span><b>Giờ ngủ</b>, rồi ăn và sinh hoạt.</span></li>';
+    $('s-days').innerHTML = st.days.map(function (d, i) { return '<tr><td>' + DAYNAMES[i] + '</td><td>' + fmt(d.fixed) + '</td><td>' + fmt(d.ess) + '</td><td class="fr">' + fmt(d.rest) + '</td></tr>'; }).join('');
+  }
+
+  // ---------- 2 · ba việc ưu tiên
+  function needEmpty() { return '<div class="empty"><p><b>Làm bước 1 trước.</b> Nhập tuần mẫu của bạn (giờ cố định, giờ ngủ), rồi quay lại đây để chọn ba việc và xếp lịch.</p></div>'; }
+  function renderViec() {
+    var w = cur().week, mine = isMine(), dis = mine ? '' : ' disabled';
+    $('btn-to-lich').hidden = !w;
+    if (!w) { $('tasks').innerHTML = needEmpty(); $('viec-hint').textContent = ''; $('viec-note').hidden = true; $('viec-sum').innerHTML = ''; return; }
+    $('viec-hint').textContent = 'Ba việc này được xếp vào lịch trước, vào những khối giờ tốt nhất, và được giữ lại nếu tuần có vỡ. Ít nhất một việc phải là việc quan trọng nhưng chưa khẩn.';
+    $('tasks').innerHTML = w.tasks.map(function (t, i) {
+      var p = 't' + i + '-';
+      return '<div class="task"><h3><b>' + (i + 1) + '</b>Việc ưu tiên ' + (i + 1) + '</h3>' +
+        '<label class="fld"><span>Tên việc</span><input type="text" id="' + p + 'name" data-t="' + i + '" data-f="name" maxlength="80" value="' + esc(t.name) + '"' + dis + ' placeholder="' + (mine ? 'Ví dụ: ôn 4 bài lý thuyết' : '') + '"></label>' +
+        '<label class="ck"><input type="checkbox" id="' + p + 'later" data-t="' + i + '" data-f="later"' + (t.later ? ' checked' : '') + dis + '><span>Quan trọng nhưng chưa khẩn (chưa có hạn trong 7 ngày tới)</span></label>' +
+        '<label class="fld"><span>Hành động tiếp theo</span><textarea id="' + p + 'next" data-t="' + i + '" data-f="next" rows="2" maxlength="160"' + dis + ' placeholder="' + (mine ? 'Bắt đầu bằng một động từ, làm được trong một lần ngồi' : '') + '">' + esc(t.next) + '</textarea></label>' +
+        '<div class="two"><label class="fld"><span>Tôi đoán (phút)</span><input type="number" id="' + p + 'guess" data-t="' + i + '" data-f="guess" min="0" max="3000" step="5" inputmode="numeric" value="' + (t.guess || '') + '"' + dis + '></label>' +
+        '<label class="fld"><span>Lần trước mất (phút)</span><input type="number" id="' + p + 'last" data-t="' + i + '" data-f="last" min="0" max="3000" step="5" inputmode="numeric" value="' + (t.last || '') + '"' + dis + (t.never ? ' disabled' : '') + '></label></div>' +
+        '<label class="ck"><input type="checkbox" id="' + p + 'never" data-t="' + i + '" data-f="never"' + (t.never ? ' checked' : '') + dis + '><span>Chưa từng làm việc tương tự</span></label>' +
+        '<div class="need" id="' + p + 'need"></div></div>';
+    }).join('');
+    renderViecDerived();
+  }
+  function renderViecDerived() {
+    var w = cur().week; if (!w) return;
+    var st = stats(w.slots), total = 0;
+    w.tasks.forEach(function (t, i) {
+      var n = need(t), got = (st.by['uu' + (i + 1)] || 0) * 60; total += n;
+      var how = t.never ? 'tôi đoán cộng thêm một nửa' : (t.last > t.guess ? 'lấy số lớn hơn: lần trước' : (t.last ? 'lấy số lớn hơn: tôi đoán' : 'theo số tôi đoán'));
+      $('t' + i + '-need').innerHTML = n ? '<span>Cần xếp <b>' + esc(mins(n)) + '</b>, ' + how + '.</span><span' + (got < n ? ' class="lack"' : '') + '>Đã xếp trên lịch: <b>' + got + ' phút</b></span>'
+        : '<span>Nhập số phút bạn đoán để biết cần xếp bao nhiêu.</span>';
+      var last = $('t' + i + '-last'); if (last && isMine()) last.disabled = !!t.never;
+    });
+    var can = st.rest - st.hua, rem = reminders(w, st).filter(function (r) { return r.indexOf('Chưa có việc nào') === 0; });
+    $('viec-note').hidden = !rem.length; $('viec-note').textContent = rem.join(' ');
+    $('viec-sum').innerHTML = '<span>Ba việc cần <b>' + fmt(total / 60) + ' giờ</b></span><span>Bạn tự sắp xếp được <b>' + fmt(can) + ' giờ</b> tuần này</span>' +
+      (can > 0 && total ? '<span>Ba việc chiếm <b>' + Math.round(total / 60 / can * 100) + '%</b> số giờ đó</span>' : '');
+  }
+
+  // ---------- 3 · lịch tuần này
+  function renderLich() {
+    var w = cur().week, mine = isMine();
+    var has = !!w;
+    ['btn-add2', 'btn-undo2', 'btn-newweek'].forEach(function (id) { $(id).hidden = !mine || !has; });
+    $('btn-undo2').disabled = !undo.lich.length; $('btn-newweek').textContent = 'Lập tuần mới từ tuần mẫu';
+    $('w-monday').disabled = $('w-heavy-day').disabled = $('w-heavy-text').disabled = !mine || !has;
+    if (!has) {
+      $('wk2-hint').textContent = ''; $('wk2-strip').innerHTML = ''; $('wk2-head').innerHTML = ''; $('wk2-body').innerHTML = needEmpty();
+      $('c-score').innerHTML = '<b>0/6</b><span></span>'; $('c-list').innerHTML = ''; $('c-note').hidden = true; $('rules2').innerHTML = ''; $('rules2b').innerHTML = ''; $('x-hint').textContent = ''; $('print-info').innerHTML = '';
+      $('btn-ics').disabled = $('btn-print').disabled = true; $('foot2').textContent = footText(mine); return;
+    }
+    var res = check(w), st = res.st, gs = groups(w.slots);
+    $('w-monday').value = w.monday;
+    $('wk2-hint').textContent = mine ? 'Chạm vào ô còn trống để xếp việc. Thứ tự: ba việc ưu tiên vào khối tốt nhất, việc nhỏ vào giờ vụn, rồi khoảng dự phòng.' : 'Chạm vào một khối để xem chi tiết.';
+    var sun = parseYmd(w.monday); sun.setDate(sun.getDate() + 6);
+    $('wk2-strip').innerHTML = '<span>Tuần <b>' + dmy(w.monday).slice(0, 5) + '–' + dmy(ymd(sun)) + '</b></span><span>Giờ còn lại <b>' + fmt(st.rest) + '</b></span><span>Đã có chủ <b>' + fmt(st.hua) + '</b></span><span>Việc ưu tiên <b>' + fmt(st.uu) + '</b></span>' +
+      '<span>Việc nhỏ, vận động <b>' + fmt(st.soft) + '</b></span><span>Dự phòng <b>' + fmt(st.dp) + '</b></span><span>Còn trống <b>' + fmt(st.free) + '</b></span>';
+    drawWeek('wk2-head', 'wk2-body', w.slots, false);
+    // sáu tiêu chí
+    $('c-score').className = 'score' + (res.pass ? '' : ' no');
+    $('c-score').innerHTML = '<b>' + res.score + '/6</b><span>' + (res.pass ? 'Đạt: lịch này qua được từ ' + CFG.passScore + ' trên 6 tiêu chí.' : 'Chưa đạt: cần từ ' + CFG.passScore + ' trên 6 tiêu chí.') + '</span>';
+    $('c-list').innerHTML = res.items.map(function (c, i) { return '<li class="' + (c.ok ? 'ok' : 'no') + '"><span class="mk" aria-hidden="true">' + (c.ok ? '✓' : (i + 1)) + '</span><span><b>' + esc(CRIT[i]) + '.</b> <small>' + (c.ok ? 'Đạt. ' : 'Chưa đạt. ') + esc(c.detail) + '</small></span></li>'; }).join('');
+    var rem = reminders(w, st); $('c-note').hidden = !rem.length; $('c-note').textContent = rem.join(' ');
+    // ngày nặng
+    $('w-heavy-day').innerHTML = '<option value="-1">Chưa chọn</option>' + DAYNAMES.map(function (d, i) { return '<option value="' + i + '">' + d + '</option>'; }).join('');
+    $('w-heavy-day').value = w.heavy.day; if ($('w-heavy-text') !== document.activeElement) $('w-heavy-text').value = w.heavy.text;
+    // khối
+    drawRules('rules2', gs, ['uu', 'soft', 'dp'], '<li class="empty"><p><b>Chưa xếp việc nào.</b> Chạm vào một ô còn trống trên lưới, hoặc bấm “Thêm khối”.</p></li>');
+    drawRules('rules2b', gs, ['fixed', 'ess', 'hua'], '');
+    // xuất
+    var n = icsEvents(w).length;
+    $('btn-ics').disabled = $('btn-print').disabled = IN_VIEWER || !n;
+    $('x-hint').textContent = IN_VIEWER ? 'Bản xem thử trên claude.ai không tải tệp và không in được. Hai nút này chạy ở tệp index.html mở trên máy, hoặc ở bản đặt trên web.'
+      : (n ? 'Tệp .ics chứa ' + n + ' khung của kế hoạch (việc ưu tiên, việc nhỏ, vận động, dự phòng) cho tuần bắt đầu ' + dmy(w.monday) + '. Giờ cố định không đưa vào tệp.' : 'Xếp ít nhất một khung để xuất.');
+    $('foot2').textContent = footText(mine);
+    renderPrint(w, res);
+  }
+  function renderPrint(w, res) {
+    var st = res.st, h = '<h3>Tuần bắt đầu thứ Hai ' + dmy(w.monday) + '</h3><p>Sáu tiêu chí: <b>' + res.score + '/6</b>, ' + (res.pass ? 'đạt' : 'chưa đạt') + '. Việc ưu tiên ' + fmt(st.uu) + ' giờ; dự phòng ' + fmt(st.dp) + ' giờ; còn trống ' + fmt(st.free) + ' giờ.</p>';
+    h += '<h3>Ba việc ưu tiên</h3><ol>' + w.tasks.map(function (t, i) { return '<li>' + (t.name.trim() ? '<b>' + esc(t.name) + '</b>' + (t.later ? ' <small>(quan trọng, chưa khẩn)</small>' : '') + '<br><small>Hành động tiếp theo: ' + esc(t.next || '…') + ' · cần ' + need(t) + ' phút, đã xếp ' + (st.by['uu' + (i + 1)] || 0) * 60 + ' phút</small>' : '<small>(để trống)</small>') + '</li>'; }).join('') + '</ol>';
+    h += '<h3>Khoảng dự phòng</h3><p>' + (res.dps.length ? res.dps.map(function (r) { return DAYNAMES[Math.floor(r.at / 48)] + ' ' + fmtRange(r.at % 48, r.len); }).join('; ') : 'Chưa có') + '</p>';
+    h += '<h3>Ngày sau trực hoặc ngày nặng nhất</h3><p>' + (w.heavy.day >= 0 ? '<b>' + DAYNAMES[w.heavy.day] + ':</b> ' : '') + esc(w.heavy.text || 'Chưa ghi') + '</p>';
+    h += '<h3>Các khung của kế hoạch</h3><ul>' + icsEvents(w).map(function (e) { var d = (e.a.getDay() + 6) % 7; return '<li><b>' + DAYS[d] + ' ' + pad(e.a.getHours()) + ':' + pad(e.a.getMinutes()) + '–' + pad(e.b.getHours()) + ':' + pad(e.b.getMinutes()) + '</b> ' + esc(e.sum) + '</li>'; }).join('') + '</ul>';
+    $('print-info').innerHTML = h;
+  }
+
+  // ---------- 4 · rà soát cuối tuần
+  function studyRuns(w) { return weekRuns(w.slots).filter(function (r) { return catOf(r.v) === 'uu'; }).sort(function (a, b) { return a.at - b.at; }); }
+  function doneCount(w) { var r = w.review; return studyRuns(w).filter(function (x) { return r.done[x.at]; }).length; }
+  function weekSpan(w) { var sun = parseYmd(w.monday); sun.setDate(sun.getDate() + 6); return dmy(w.monday).slice(0, 5) + '–' + dmy(ymd(sun)).slice(0, 5); }
+  function msgText(w) {
+    var r = w.review, total = studyRuns(w).length;
+    var tasks = w.tasks.map(function (t, i) { return t.name.trim() ? t.name.trim() + (r.res[i].st ? ' (' + RESNAME[r.res[i].st].toLowerCase() + ')' : '') : ''; }).filter(Boolean);
+    return 'Tuần ' + weekSpan(w) + '\n1. Ba việc ưu tiên: ' + (tasks.join('; ') || 'chưa ghi') + '. Làm đúng ' + doneCount(w) + '/' + total + ' khung.' +
+      '\n2. Nguyên nhân lệch chính: ' + (r.cause ? CAUSES[r.cause].name.toLowerCase() : 'chưa chọn') + '.' +
+      '\n3. Một điều tôi đổi: ' + (r.change.trim() || 'chưa ghi') + (/[.!?]$/.test(r.change.trim()) ? '' : '.');
+  }
+  function setVal(id, v) { var el = $(id); if (el !== document.activeElement) el.value = v; }
+  function renderRa() {
+    var w = cur().week, mine = isMine(), dis = mine ? '' : ' disabled';
+    ['ra-nights', 'ra-screen', 'ra-ex', 'ra-keep', 'ra-change'].forEach(function (id) { $(id).disabled = !mine || !w; });
+    $('btn-newweek2').hidden = !mine || !w; $('btn-newweek2').textContent = 'Xong rà soát: lập tuần mới';
+    $('btn-copymsg').disabled = !w; $('ra-copied').textContent = '';
+    var hist = mine ? state.mine.history : [];
+    $('ra-hist-wrap').hidden = !hist.length;
+    $('ra-hist').innerHTML = hist.map(function (h) {
+      return '<li><b>Tuần ' + esc(dmy(h.monday)) + ':</b> làm đúng ' + h.done + '/' + h.total + ' khung' + (h.cause && CAUSES[h.cause] ? ' · ' + esc(CAUSES[h.cause].name.toLowerCase()) : '') +
+        (h.change ? '<small>Điều định đổi: ' + esc(h.change) + '</small>' : '') + '</li>';
+    }).join('');
+    if (!w) {
+      $('ra-hint').textContent = ''; $('ra-score').innerHTML = ''; $('ra-ticks').innerHTML = needEmpty(); $('ra-res').innerHTML = ''; $('ra-ratio').textContent = '';
+      $('ra-causes').innerHTML = ''; $('ra-fix').hidden = true; $('ra-kept').innerHTML = ''; $('ra-ctrl').innerHTML = ''; $('ra-msg').value = ''; return;
+    }
+    var r = w.review, runs = studyRuns(w), done = doneCount(w);
+    $('ra-hint').textContent = runs.length ? 'Tuần ' + weekSpan(w) + '. Làm trong 15 phút, vào một giờ cố định mỗi tuần. Chạm vào từng khung bạn đã làm đúng như lịch.' : 'Tuần này chưa có khung việc ưu tiên nào trên lịch. Xếp lịch ở bước 3 trước.';
+    $('ra-score').innerHTML = runs.length ? '<b>' + done + '/' + runs.length + '</b><span>khung làm đúng như lịch</span>' : '';
+    $('ra-ticks').innerHTML = runs.map(function (x) {
+      var ty = typeOf(x.v), ok = !!r.done[x.at];
+      return '<li><button type="button" class="tick" data-at="' + x.at + '" aria-pressed="' + ok + '"' + dis + '><span class="mk" aria-hidden="true">✓</span><span><b>' + DAYS[Math.floor(x.at / 48)] + ' ' + fmtRange(x.at % 48, x.len) + '</b> ' +
+        esc(noteOf(x.v) || 'Chưa ghi làm gì') + '<small>' + esc(TYPES[ty].name) + '</small></span></button></li>';
+    }).join('');
+    var st = stats(w.slots), planned = 0, actual = 0;
+    $('ra-res').innerHTML = w.tasks.map(function (t, i) {
+      if (!t.name.trim()) return '';
+      var res = r.res[i], n = need(t); if (res.act) { planned += n; actual += res.act; }
+      return '<div class="resrow"><b>' + (i + 1) + '. ' + esc(t.name) + '</b><div class="line"><div class="seg" role="group" aria-label="Kết quả việc ' + (i + 1) + '">' +
+        Object.keys(RESNAME).map(function (k) { return '<button type="button" data-res="' + i + '" data-st="' + k + '" aria-pressed="' + (res.st === k) + '"' + dis + '>' + RESNAME[k] + '</button>'; }).join('') + '</div>' +
+        '<label class="fld"><span>Thực tế (phút)</span><input type="number" id="ra-act-' + i + '" data-act="' + i + '" min="0" max="6000" step="5" inputmode="numeric" value="' + (res.act || '') + '"' + dis + '></label></div>' +
+        '<span class="hint">Dự tính ' + n + ' phút; đã xếp trên lịch ' + (st.by['uu' + (i + 1)] || 0) * 60 + ' phút.</span></div>';
+    }).join('') || '<p class="hint">Chưa có việc ưu tiên nào có tên.</p>';
+    $('ra-ratio').textContent = planned && actual ? 'Các việc đã ghi số: dự tính ' + fmt(planned / 60) + ' giờ, thực tế ' + fmt(actual / 60) + ' giờ. Thực tế bằng ' + Math.round(actual / planned * 100) + '% dự tính; dùng con số này khi đoán thời gian cho tuần tới.' : '';
+    setVal('ra-nights', r.nights >= 0 ? r.nights : ''); setVal('ra-screen', r.screen || ''); setVal('ra-ex', r.ex); setVal('ra-keep', r.keep); setVal('ra-change', r.change);
+    $('ra-causes').innerHTML = Object.keys(CAUSES).map(function (k) { return '<button type="button" class="cause" role="radio" data-cause="' + k + '" aria-checked="' + (r.cause === k) + '"' + dis + '><b>' + CAUSES[k].name + '</b><small>' + CAUSES[k].sign + '</small></button>'; }).join('');
+    $('ra-fix').hidden = !r.cause; $('ra-fix').textContent = r.cause ? CAUSES[r.cause].fix : '';
+    $('ra-kept').innerHTML = [['co', 'Có'], ['chua', 'Chưa']].map(function (o) { return '<button type="button" data-kept="' + o[0] + '" aria-pressed="' + (r.kept === o[0]) + '"' + dis + '>' + o[1] + '</button>'; }).join('');
+    $('ra-ctrl').innerHTML = [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-ctrl="' + n + '" aria-pressed="' + (r.ctrl === n) + '"' + dis + '>' + n + '</button>'; }).join('');
+    $('ra-msg').value = msgText(w);
+  }
+  function archiveWeek() {
+    var w = state.mine.week; if (!w) return;
+    var total = studyRuns(w).length; if (!total) return;
+    var h = state.mine.history.filter(function (x) { return x.monday !== w.monday; });
+    h.unshift({ monday: w.monday, total: total, done: doneCount(w), cause: w.review.cause, change: w.review.change.trim() });
+    state.mine.history = h.slice(0, 26);
+  }
+  function startNewWeek() {
+    var old = state.mine.week; archiveWeek(); undo.lich = [];
+    var nw = newWeek(state.mine.template, old.tasks);
+    if (nw.monday <= old.monday) { var d = parseYmd(old.monday); d.setDate(d.getDate() + 7); nw.monday = ymd(d); }
+    state.mine.week = nw; state.view = 'viec'; save(); render(); window.scrollTo(0, 0);
+  }
+
+  // ---------- hộp nhập khối
+  var armedBtn = '';
+  var dlg = $('dlg'), editing = null, armed = false, lastType = { mau: 'lop', lich: 'uu1' };
+  function fillSelect(sel, from, to) { var h = ''; for (var s = from; s <= to; s++) h += '<option value="' + s + '">' + (s === 48 ? '24:00' : s2t(s)) + '</option>'; sel.innerHTML = h; }
+  function initForm() {
+    fillSelect($('f-start'), 0, 47); fillSelect($('f-end'), 1, 48);
+    $('f-days').innerHTML = DAYS.map(function (d, i) { return '<label><input type="checkbox" id="f-day-' + i + '" value="' + i + '" aria-label="' + DAYNAMES[i] + '"><span>' + d + '</span></label>'; }).join('');
+  }
+  function typeOptions() {
+    function opt(k, label) { return '<option value="' + k + '">' + esc(label || TYPES[k].name) + '</option>'; }
+    if (state.view === 'mau') return BASE.map(function (k) { return opt(k); }).join('');
+    var tasks = cur().week.tasks;
+    return '<optgroup label="Kế hoạch của tuần này">' + PLAN.map(function (k) { var i = k.slice(0, 2) === 'uu' ? +k.slice(2) - 1 : -1; return opt(k, i >= 0 ? TYPES[k].name + (tasks[i].name.trim() ? ': ' + tasks[i].name.trim() : ' (chưa đặt tên)') : ''); }).join('') + '</optgroup>' +
+      '<optgroup label="Tuần này khác tuần mẫu">' + BASE.map(function (k) { return opt(k); }).join('') + '</optgroup>';
+  }
+  function formDays() { var out = []; for (var i = 0; i < 7; i++) if ($('f-day-' + i).checked) out.push(i); return out; }
+  function setDays(days) { for (var i = 0; i < 7; i++) $('f-day-' + i).checked = days.indexOf(i) >= 0; }
+  function formSpan() { var a = +$('f-start').value; return { start: a, len: spanLen(a, +$('f-end').value) }; }
+  function refreshForm() {
+    armed = false; $('f-msg').hidden = true; $('f-save').textContent = 'Lưu'; $('f-del').textContent = 'Xóa khối này';
+    var sp = formSpan(), n = formDays().length, cross = sp.start + sp.len > 48, ty = $('f-type').value;
+    $('f-span').textContent = fmt(sp.len / 2) + ' giờ mỗi lần' + (cross ? ', kéo sang ngày hôm sau' : '') + (n > 1 ? ' · ' + n + ' ngày · tổng ' + fmt(sp.len / 2 * n) + ' giờ mỗi tuần' : '');
+    $('f-note-wrap').hidden = ty === 'dp';
+    $('f-note-label').textContent = ty === 'hua' ? 'Tên việc' : (ty.slice(0, 2) === 'uu' ? 'Khung này làm gì' : (ty === 'nho' ? 'Việc nhỏ gì' : 'Ghi chú (không bắt buộc)'));
+    $('f-note').placeholder = ty === 'hua' ? 'Ví dụ: dạy kèm, sinh hoạt câu lạc bộ' : (ty.slice(0, 2) === 'uu' ? 'Ví dụ: làm 30 câu bài viêm ruột thừa, chấm, ghi câu sai' : (ty === 'nho' ? 'Ví dụ: 20 thẻ nhớ' : ''));
+  }
+  function openForm(g, preset) {
+    editing = g || null;
+    $('f-title').textContent = g ? 'Sửa khối' : (state.view === 'mau' ? 'Thêm giờ' : 'Thêm khối');
+    $('f-type').innerHTML = typeOptions();
+    $('f-type').value = g ? typeOf(g.v) : (preset && preset.len < CFG.blockMinSlots && state.view === 'lich' ? 'nho' : lastType[state.view === 'mau' ? 'mau' : 'lich']);
+    $('f-note').value = g ? noteOf(g.v) : '';
+    setDays(g ? g.days : (preset ? [preset.d] : []));
+    var start = g ? g.start : (preset ? preset.start : 14), len = g ? g.len : (preset ? preset.len : 2);
+    $('f-start').value = start; $('f-end').value = ((start + len - 1) % 48) + 1;
+    $('f-del').hidden = !g;
+    refreshForm();
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  function redrawWeek() { if (state.view === 'mau') drawWeek('wk-head', 'wk-body', cur().template, isMine() && tplEmpty()); else if (cur().week) drawWeek('wk2-head', 'wk2-body', cur().week.slots, false); }
+  function closeForm() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); editing = null; selKey = ''; redrawWeek(); }
+  function showMsg(t) { $('f-msg').textContent = t; $('f-msg').hidden = false; }
+  function submitForm(ev) {
+    ev.preventDefault();
+    var days = formDays(), sp = formSpan(), type = $('f-type').value, v = val(type, type === 'dp' ? '' : $('f-note').value);
+    if (!days.length) return showMsg('Chọn ít nhất một ngày.');
+    if (NEEDNOTE[type] && !noteOf(v)) return showMsg(NEEDNOTE[type]);
+    var next = viewSlots().slice();
+    if (editing) paint(next, '', editing.days, editing.start, editing.len);
+    var hit = {}, total = 0;
+    days.forEach(function (d) { for (var k = 0; k < sp.len; k++) { var c = next[(d * 48 + sp.start + k) % N]; if (c && c !== v) { hit[labelOf(c)] = (hit[labelOf(c)] || 0) + 0.5; total += 0.5; } } });
+    if (total && !armed) {
+      armed = true; $('f-save').textContent = 'Vẫn lưu, thay phần trùng';
+      return showMsg('Khối này trùng ' + fmt(total) + ' giờ đã nhập: ' + Object.keys(hit).map(function (k) { return k.toLowerCase() + ' ' + fmt(hit[k]) + ' giờ'; }).join(', ') + '. Bấm lưu lần nữa để thay phần trùng.');
+    }
+    paint(next, v, days, sp.start, sp.len);
+    lastType[state.view === 'mau' ? 'mau' : 'lich'] = type; commit(next); closeForm();
+  }
+  function deleteGroup() {
+    if (!editing) return;
+    if (!armed) { armed = true; $('f-del').textContent = 'Bấm lần nữa để xóa ở ' + fmtDays(editing.days); return; }
+    var next = viewSlots().slice(); paint(next, '', editing.days, editing.start, editing.len); commit(next); closeForm();
+  }
+  function groupAt(slots, d, s) {
+    var gs = groups(slots), i = d * 48 + s;
+    for (var k = 0; k < gs.length; k++) { var g = gs[k]; for (var m = 0; m < g.days.length; m++) { var off = (i - (g.days[m] * 48 + g.start) + N) % N; if (off < g.len) return g; } }
+    return null;
+  }
+
+  // ---------- sự kiện
+  function arm(id, btn, text) { if (armedBtn === id) { armedBtn = ''; return true; } armedBtn = id; btn.textContent = text; return false; }
+  function setHint(t) { $(state.view === 'mau' ? 'wk-hint' : 'wk2-hint').textContent = t; }
+  document.querySelector('.sets').addEventListener('click', function (e) {
+    var b = e.target.closest('.set'); if (!b) return;
+    state.active = b.getAttribute('data-set'); armedBtn = ''; selKey = ''; save(); render();
+  });
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('.tab'); if (!b) return;
+    state.view = b.getAttribute('data-view'); armedBtn = ''; selKey = ''; save(); render();
+  });
+  $('btn-to-lich').addEventListener('click', function () { state.view = 'lich'; save(); render(); window.scrollTo(0, 0); });
+  $('btn-copy').addEventListener('click', function () {
+    var hasData = !tplEmpty() || !!state.mine.week;
+    if (hasData && !arm('copy', this, '“Của tôi” đang có dữ liệu. Bấm lần nữa để thay')) return;
+    armedBtn = ''; var s = sample[state.active];
+    state.mine = { template: s.template.slice(), week: cloneWeek(s.week), history: [] }; undo = { mau: [], lich: [] }; state.active = 'toi'; save(); render();
+  });
+  $('btn-clear').addEventListener('click', function () { if (!arm('clear', this, 'Bấm lần nữa để xóa hết tuần mẫu')) return; commit(blank()); });
+  $('btn-newweek').addEventListener('click', function () {
+    if (!arm('newweek', this, 'Bấm lần nữa: xóa các khối đã xếp, giữ ba việc')) return;
+    startNewWeek();
+  });
+  $('btn-undo').addEventListener('click', function () { if (!undo.mau.length) return; state.mine.template = undo.mau.pop(); save(); render(); });
+  $('btn-undo2').addEventListener('click', function () { if (!undo.lich.length || !state.mine.week) return; state.mine.week.slots = undo.lich.pop(); save(); render(); });
+  $('btn-add').addEventListener('click', function () { openForm(null, null); });
+  $('btn-add2').addEventListener('click', function () { openForm(null, null); });
+  function onGridClick(e) {
+    var b = e.target.closest('.blk'); if (!b) return;
+    var d = +b.getAttribute('data-d'), s = +b.getAttribute('data-s'), l = +b.getAttribute('data-l'), slots = viewSlots();
+    selKey = d + ':' + s; redrawWeek();
+    if (!isMine()) { setHint(b.getAttribute('aria-label') + '. Đây là dữ liệu mẫu; chép sang “Của tôi” để sửa.'); return; }
+    var g = slots[d * 48 + s] ? groupAt(slots, d, s) : null;
+    openForm(g, g ? null : { d: d, start: s, len: l });
+  }
+  $('wk-body').addEventListener('click', onGridClick);
+  $('wk2-body').addEventListener('click', onGridClick);
+  function onRuleClick(e) {
+    var b = e.target.closest('.rule'); if (!b) return;
+    var g = groups(viewSlots())[+b.getAttribute('data-g')];
+    if (!isMine()) { selKey = g.days[0] + ':' + g.start; redrawWeek(); setHint(labelOf(g.v) + ', ' + fmtDays(g.days) + ', ' + fmtRange(g.start, g.len) + '. Đây là dữ liệu mẫu; chép sang “Của tôi” để sửa.'); return; }
+    openForm(g, null);
+  }
+  ['rules', 'rules2', 'rules2b'].forEach(function (id) { $(id).addEventListener('click', onRuleClick); });
+  $('form').addEventListener('submit', submitForm);
+  $('form').addEventListener('change', refreshForm);
+  $('f-note').addEventListener('input', function () { if (armed || !$('f-msg').hidden) refreshForm(); });
+  $('f-cancel').addEventListener('click', closeForm);
+  $('f-del').addEventListener('click', deleteGroup);
+  dlg.addEventListener('cancel', function (e) { e.preventDefault(); closeForm(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) closeForm(); });
+  document.querySelector('.quick').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    setDays(b.getAttribute('data-days').split('').map(Number)); refreshForm();
+  });
+  // ba việc ưu tiên: lưu ngay khi gõ, chỉ vẽ lại phần số liệu để không mất con trỏ
+  $('tasks').addEventListener('input', function (e) {
+    var el = e.target, i = el.getAttribute('data-t'), f = el.getAttribute('data-f'); if (i === null || !isMine() || !state.mine.week) return;
+    var t = state.mine.week.tasks[+i];
+    if (f === 'later' || f === 'never') t[f] = el.checked; else if (f === 'guess' || f === 'last') t[f] = Math.max(0, Math.round(+el.value || 0)); else t[f] = el.value;
+    save(); renderViecDerived();
+  });
+  // lịch tuần: ngày bắt đầu và phương án cho ngày nặng
+  $('w-monday').addEventListener('change', function () {
+    if (!isMine() || !state.mine.week || !this.value) return;
+    var d = parseYmd(this.value); if (isNaN(d.getTime())) return;
+    var picked = this.value, m = ymd(mondayOf(d)); state.mine.week.monday = m; save(); render();
+    if (m !== picked) setHint('Tuần bắt đầu từ thứ Hai, nên đã đổi về ' + dmy(m) + '.');
+  });
+  $('w-heavy-day').addEventListener('change', function () { if (!isMine() || !state.mine.week) return; state.mine.week.heavy.day = +this.value; save(); render(); });
+  $('w-heavy-text').addEventListener('input', function () { if (!isMine() || !state.mine.week) return; state.mine.week.heavy.text = this.value; save(); render(); });
+  // rà soát cuối tuần
+  $('v-ra').addEventListener('click', function (e) {
+    if (!isMine() || !state.mine.week) return;
+    var r = state.mine.week.review, b = e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-at')) { var k = b.getAttribute('data-at'); if (r.done[k]) delete r.done[k]; else r.done[k] = true; }
+    else if (b.hasAttribute('data-res')) { var res = r.res[+b.getAttribute('data-res')], st = b.getAttribute('data-st'); res.st = res.st === st ? '' : st; }
+    else if (b.hasAttribute('data-cause')) { var c = b.getAttribute('data-cause'); r.cause = r.cause === c ? '' : c; }
+    else if (b.hasAttribute('data-kept')) { var kp = b.getAttribute('data-kept'); r.kept = r.kept === kp ? '' : kp; }
+    else if (b.hasAttribute('data-ctrl')) { var n = +b.getAttribute('data-ctrl'); r.ctrl = r.ctrl === n ? 0 : n; }
+    else return;
+    save(); render();
+  });
+  $('v-ra').addEventListener('input', function (e) {
+    if (!isMine() || !state.mine.week) return;
+    var r = state.mine.week.review, el = e.target, f = el.getAttribute('data-r');
+    if (el.hasAttribute('data-act')) r.res[+el.getAttribute('data-act')].act = Math.max(0, Math.round(+el.value || 0));
+    else if (f === 'nights') r.nights = el.value === '' ? -1 : Math.min(7, Math.max(0, Math.round(+el.value || 0)));
+    else if (f === 'screen') r.screen = Math.max(0, Math.round(+el.value || 0));
+    else if (f) r[f] = el.value;
+    else return;
+    save(); $('ra-msg').value = msgText(state.mine.week);
+  });
+  $('v-ra').addEventListener('change', function (e) { if (e.target.hasAttribute('data-act') && isMine() && state.mine.week) render(); });
+  function copyText(text, area, done) {
+    function fallback() { area.focus(); area.select(); done(false); }
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(true); }, fallback); else fallback(); } catch (e) { fallback(); }
+  }
+  $('btn-copymsg').addEventListener('click', function () {
+    copyText($('ra-msg').value, $('ra-msg'), function (ok) { $('ra-copied').textContent = ok ? 'Đã chép. Dán vào tin nhắn gửi người đồng hành.' : 'Đã bôi chọn ba dòng; bấm Sao chép trên bàn phím hoặc trong trình đơn.'; });
+  });
+  $('btn-newweek2').addEventListener('click', function () { if (!arm('newweek2', this, 'Bấm lần nữa: lưu tuần này vào danh sách và lập tuần mới')) return; startNewWeek(); });
+
+  // sao lưu và khôi phục
+  function backupText() { return JSON.stringify({ app: 'lich-tuan-kha-thi', v: 3, saved: new Date().toISOString(), mine: state.mine }); }
+  function bkMsg(t) { $('bk-msg').textContent = t; $('bk-msg').hidden = false; }
+  $('btn-bk-copy').addEventListener('click', function () {
+    $('bk-text').value = backupText();
+    copyText($('bk-text').value, $('bk-text'), function (ok) { bkMsg(ok ? 'Đã chép dữ liệu sao lưu. Dán vào một ghi chú hoặc tin nhắn gửi cho chính bạn để giữ.' : 'Dữ liệu sao lưu nằm trong ô bên dưới và đã được bôi chọn; hãy sao chép rồi dán vào nơi bạn muốn giữ.'); });
+  });
+  $('btn-bk-file').disabled = IN_VIEWER;
+  $('btn-bk-file').addEventListener('click', function () {
+    try {
+      var url = URL.createObjectURL(new Blob([backupText()], { type: 'application/json' })), a = document.createElement('a');
+      a.href = url; a.download = 'lich-tuan-sao-luu-' + ymd(new Date()) + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      bkMsg('Đã tạo tệp sao lưu. Nếu không thấy tệp tải về, dùng nút “Chép dữ liệu sao lưu”.');
+    } catch (e) { bkMsg('Trình duyệt này không tạo được tệp. Dùng nút “Chép dữ liệu sao lưu”.'); }
+  });
+  $('bk-file').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    var rd = new FileReader(); rd.onload = function () { $('bk-text').value = String(rd.result || ''); bkMsg('Đã đọc tệp. Bấm “Khôi phục” để thay dữ liệu hiện có.'); }; rd.readAsText(f);
+  });
+  $('bk-text').addEventListener('input', function () { armedBtn = ''; $('btn-bk-restore').textContent = 'Khôi phục'; });
+  $('btn-bk-restore').addEventListener('click', function () {
+    var o = null; try { o = JSON.parse($('bk-text').value); } catch (e) { o = null; }
+    var m = o && parseMine(o.mine !== undefined ? o.mine : o);
+    if (!m || (m.template.every(function (v) { return !v; }) && !m.week)) { armedBtn = ''; return bkMsg('Không đọc được dữ liệu sao lưu. Hãy dán đúng toàn bộ đoạn đã chép, bắt đầu bằng dấu { và kết thúc bằng dấu }.'); }
+    var hasData = !tplEmpty() || !!state.mine.week;
+    if (hasData && !arm('restore', this, 'Bấm lần nữa để thay dữ liệu hiện có')) return bkMsg('Dữ liệu “Của tôi” hiện có sẽ bị thay bằng bản sao lưu này.');
+    armedBtn = ''; this.textContent = 'Khôi phục';
+    state.mine = m; undo = { mau: [], lich: [] }; state.active = 'toi'; save(); render(); bkMsg('Đã khôi phục. Dữ liệu “Của tôi” nay là bản sao lưu vừa dán.');
+  });
+
+  // xuất
+  $('btn-ics').addEventListener('click', function () {
+    var w = cur().week; if (!w) return;
+    var name = 'lich-tuan-' + w.monday + '.ics', msg = $('x-msg');
+    try {
+      var url = URL.createObjectURL(new Blob([icsText(w)], { type: 'text/calendar;charset=utf-8' })), a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      msg.textContent = 'Đã tạo tệp ' + name + '. Trong Lịch Google trên máy tính: Cài đặt → Nhập và xuất → chọn tệp này. Nhập một lần; nhập lại sẽ tạo sự kiện trùng. Nếu không thấy tệp tải về, hãy mở trang này bằng Chrome hoặc Safari thay cho trình duyệt nằm trong ứng dụng nhắn tin.';
+    } catch (e) { msg.textContent = 'Trình duyệt này không tạo được tệp. Hãy thử bằng Chrome hoặc Safari.'; }
+    msg.hidden = false;
+  });
+  $('btn-print').addEventListener('click', function () { try { window.print(); } catch (e) { /* trình duyệt không cho in */ } });
+
+  // Cho phép kiểm thử từ bên ngoài
+  window.lichTuan = {
+    stats: function (name, which) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return stats(which === 'week' ? o.week.slots : o.template); },
+    check: function (name) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return o.week ? check(o.week) : null; },
+    ics: function (name) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return o.week ? icsText(o.week) : ''; },
+    groups: function () { return groups(viewSlots()); },
+    review: function (name) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return o.week ? { done: doneCount(o.week), total: studyRuns(o.week).length, msg: msgText(o.week), history: o.history } : null; }
+  };
+
+  initForm(); load();
+  (function () { var h = (location.hash || '').slice(1); if (h === 'mau' || h === 'viec' || h === 'lich' || h === 'ra') state.view = h; })();
+  render();
+})();
+</script>
