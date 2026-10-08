@@ -10,6 +10,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Lịch tuần khả thi</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&display=swap">
 <style>
 /* Bố cục: một cột trên điện thoại (168 giờ → lưới tuần → các khối đã nhập); từ 900px chia hai cột, lưới tuần bên trái. */
 :root {
@@ -17,7 +18,7 @@
   --accent: #1D5C42; --on-accent: #FFFFFF; --navy: #16324F;
   --c-fixed: #16324F; --c-ess: #5E7186; --c-hua: #9A6412; --on-block: #FFFFFF;
   --free-fill: #E1EEE7; --free-ink: #1D5C42; --warn-bg: #F6E7CF; --warn-ink: #6B4208; --danger: #9C2F2F; --focus: #0B5CAD;
-  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --font: "Be Vietnam Pro", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Roboto", "Helvetica Neue", Arial, sans-serif;
   --rh: 13px; /* chiều cao một ô 30 phút trong lưới tuần */
 }
 @media (prefers-color-scheme: dark) {
@@ -251,6 +252,52 @@ details.more > summary::-webkit-details-marker { display: none; }
 #backup > summary::-webkit-details-marker { display: none; }
 input[type="file"] { max-width: 100%; font-size: 14px; }
 
+/* ===== giao diện theo bộ nhận diện CLB: logo, trang mở đầu, bạn đồng hành ===== */
+:root { --plate: #F5F6F4; --plate-line: #D3D6D0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --plate: #EEF1F0; --plate-line: #C9D1D6; } }
+:root[data-theme="dark"] { --plate: #EEF1F0; --plate-line: #C9D1D6; }
+.than { display: grid; gap: 16px; min-width: 0; }
+.top { align-items: center; justify-content: flex-start; flex-wrap: nowrap; gap: 12px; }
+.top .ttl { flex: 1 1 auto; min-width: 0; }
+.top h1 { font-size: clamp(22px, 4.6vw, 30px); }
+.logo-btn { width: 58px; height: 58px; border-radius: 50%; background: var(--plate); border: 1px solid var(--plate-line); padding: 5px; cursor: pointer; flex: none; }
+.logo-btn img, .vong-logo img, .vong-m img { width: 100%; height: 100%; display: block; }
+.ban-btn { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 14px 4px 4px; cursor: pointer; min-height: 52px;
+  text-align: left; flex: none; }
+.ban-btn img { width: 44px; height: 44px; border-radius: 50%; background: var(--plate); flex: none; }
+.ban-btn small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ban-btn b { font-weight: 700; font-size: 15px; }
+@media (max-width: 559px) { .ban-btn span { display: none; } .ban-btn { padding: 4px; } .top .eyebrow { font-size: 10px; letter-spacing: .08em; } }
+
+.chao { display: grid; justify-items: center; text-align: center; gap: 12px; padding-block: 4px 20px; }
+.chao .eyebrow { max-width: 30em; }
+.vong { position: relative; width: min(100%, 430px); aspect-ratio: 1; }
+.vong-logo { position: absolute; inset: 29%; border-radius: 50%; background: var(--plate); border: 1px solid var(--plate-line); padding: 4.5%; }
+.vong-m { position: absolute; left: 50%; top: 50%; width: 26%; aspect-ratio: 1; margin: -13% 0 0 -13%; border-radius: 50%; border: 2px solid transparent; background: transparent; padding: 0; cursor: pointer;
+  transform: rotate(var(--a)) translate(0, -140%) rotate(calc(-1 * var(--a))); }
+.vong-m[aria-pressed="true"] { border-color: var(--accent); background: var(--free-fill); }
+.chao h1 { font-size: clamp(30px, 7.5vw, 44px); }
+.chao .tag { max-width: 32em; font-size: 17px; font-weight: 500; }
+.chao .pick { font-size: 15px; color: var(--muted); max-width: 32em; min-height: 3em; }
+.chao .pick b { color: var(--accent); }
+.btn.big { font-size: 18px; padding: 12px 40px; min-height: 54px; }
+.chao .story { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); border-top: 3px solid var(--accent); padding-top: 12px; margin-top: 8px; }
+
+.dh { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; min-width: 0; }
+.layout > .dh { grid-area: dh; }
+.dh img { width: 72px; height: 72px; display: block; }
+.dh .loi { background: var(--surface); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 10px 14px; font-size: 15px; }
+.dh .loi b { display: block; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
+.layout { grid-template-areas: "dh" "sum" "week" "list"; }
+#v-lich, #v-ra { grid-template-areas: "dh" "week" "sum" "list"; }
+@media (min-width: 900px) { .layout, #v-lich, #v-ra { grid-template-areas: "dh dh" "week sum" "week list"; } }
+.score img { width: 60px; height: 60px; margin-left: auto; }
+.empty.co-ban { grid-template-columns: 72px minmax(0, 1fr); align-items: center; } .empty.co-ban img { width: 72px; height: 72px; }
+.chan { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; border-top: 1px solid var(--line); padding-top: 14px; font-size: 13px; color: var(--muted); }
+.chan img { width: 36px; height: 36px; border-radius: 50%; background: var(--plate); border: 1px solid var(--plate-line); padding: 3px; }
+.chan b { color: var(--ink); } .chan .build { margin-left: auto; }
+.chao .ver { font-size: 12px; color: var(--muted); }
+
 @media print {
   @page { size: A4 landscape; margin: 9mm; }
   :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
@@ -262,7 +309,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
   body { font-size: 9.5pt; line-height: 1.3; }
   .app { max-width: none; padding: 0; gap: 3mm; }
   .top { border-bottom-width: 2px; padding-bottom: 1.5mm; } .eyebrow { font-size: 7pt; } h1 { font-size: 15pt; }
-  .build, .sets, .setnote, .tabs, .btn, .btns, .hint, .foot, dialog, #v-mau, #v-viec, #v-ra, #backup, #v-lich .sum, #v-lich .list, .daterow, .strip { display: none !important; }
+  .build, .sets, .setnote, .tabs, .btn, .btns, .hint, .foot, .chao, .dh, .ban-btn, .chan, dialog, #v-mau, #v-viec, #v-ra, #backup, #v-lich .sum, #v-lich .list, .daterow, .strip { display: none !important; }
   #v-lich { display: grid !important; grid-template-columns: 1.5fr 1fr; grid-template-areas: "week info"; gap: 5mm; align-items: start; }
   .panel { border: 0; border-radius: 0; padding: 0; gap: 2mm; background: transparent; }
   .printonly { display: grid; gap: 2.5mm; grid-area: info; align-content: start; }
@@ -279,12 +326,28 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
 </head>
 <body>
 <div class="app">
+  <!-- ============ Trang mở đầu ============ -->
+  <section class="chao" id="v-chao" aria-labelledby="chao-ten">
+    <p class="eyebrow">CLB Ngoại khoa Trưng Vương · Workshop Quản lý thời gian</p>
+    <div class="vong" id="vong">
+      <div class="vong-logo"><img src="hinh/logo.webp" alt="Logo CLB Ngoại khoa Trưng Vương" width="240" height="240"></div>
+    </div>
+    <h1 id="chao-ten">Lịch tuần khả thi</h1>
+    <p class="tag">Mười lăm phút mỗi tuần: biết giờ của mình đi đâu, chọn ba việc, xếp một lịch làm được, rồi rà soát.</p>
+    <p class="pick" id="chao-pick"></p>
+    <button type="button" class="btn pri big" id="btn-start">Bắt đầu</button>
+    <p class="story">Đón Nhận – Trưởng thành – Trao lại</p>
+    <p class="ver" id="ver-chao"></p>
+  </section>
+
+  <div class="than" id="than" hidden>
   <header class="top">
-    <div>
+    <button type="button" class="logo-btn" id="btn-home" aria-label="Về trang mở đầu" title="Về trang mở đầu"><img src="hinh/logo.webp" alt="Logo CLB Ngoại khoa Trưng Vương" width="48" height="48"></button>
+    <div class="ttl">
       <p class="eyebrow">CLB Ngoại khoa Trưng Vương · Workshop Quản lý thời gian</p>
       <h1>Lịch tuần khả thi</h1>
     </div>
-    <p class="build">Bản thử bước 3: thêm rà soát cuối tuần và sao lưu</p>
+    <button type="button" class="ban-btn" id="btn-ban" aria-label="Đổi bạn đồng hành" title="Đổi bạn đồng hành"><img id="ban-img" src="hinh/m-kirin-chao.webp" alt="" width="44" height="44"><span><small>Bạn đồng hành</small><b id="ban-name"></b></span></button>
   </header>
 
   <nav class="sets" aria-label="Chọn bộ dữ liệu">
@@ -306,6 +369,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
 
   <!-- ============ 1 · Tuần mẫu ============ -->
   <div class="layout" id="v-mau" role="tabpanel" aria-labelledby="tab-mau">
+    <div class="dh" id="dh-mau"></div>
     <section class="panel sum" aria-labelledby="h-sum">
       <div class="phead"><h2 id="h-sum">168 giờ của một tuần</h2></div>
       <div class="big"><b id="s-free">0</b><span id="s-free-note">giờ còn lại</span></div>
@@ -355,6 +419,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
 
   <!-- ============ 2 · Ba việc ưu tiên ============ -->
   <div class="stack" id="v-viec" role="tabpanel" aria-labelledby="tab-viec" hidden>
+    <div class="dh" id="dh-viec"></div>
     <section class="panel" aria-labelledby="h-viec">
       <div class="phead"><h2 id="h-viec">Nếu tuần tới chỉ làm xong được ba việc, đó là ba việc nào?</h2></div>
       <p class="hint" id="viec-hint"></p>
@@ -367,6 +432,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
 
   <!-- ============ 3 · Lịch tuần này ============ -->
   <div class="layout" id="v-lich" role="tabpanel" aria-labelledby="tab-lich" hidden>
+    <div class="dh" id="dh-lich"></div>
     <section class="panel week" aria-labelledby="h-lich">
       <div class="phead">
         <h2 id="h-lich">Lịch tuần này</h2>
@@ -428,6 +494,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
 
   <!-- ============ 4 · Rà soát cuối tuần ============ -->
   <div class="layout" id="v-ra" role="tabpanel" aria-labelledby="tab-ra" hidden>
+    <div class="dh" id="dh-ra"></div>
     <section class="panel week" aria-labelledby="h-ra">
       <div class="phead"><h2 id="h-ra">Kế hoạch và thực tế</h2></div>
       <p class="hint" id="ra-hint"></p>
@@ -488,6 +555,13 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     </div>
     <p class="note" id="bk-msg" hidden></p>
   </details>
+
+  <footer class="chan">
+    <img src="hinh/logo.webp" alt="" width="36" height="36" loading="lazy">
+    <span><b>CLB Ngoại khoa Trưng Vương</b> · Đón Nhận – Trưởng thành – Trao lại</span>
+    <span class="build" id="ver"></span>
+  </footer>
+  </div>
 </div>
 
 <dialog id="dlg" aria-labelledby="f-title">
@@ -526,6 +600,8 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
      Sửa ở khối này; phần mã bên dưới không cần đụng tới.
      ===================================================================== */
   var CFG = {
+    version: '0.4.0',     // số phiên bản: tăng số giữa khi thêm chức năng hoặc đổi giao diện, tăng số cuối khi chỉ sửa lỗi
+    released: '08/10/2026',
     storageKey: 'lich-tuan-kha-thi.v1',
     blockMinSlots: 2,     // khối tự quyết: từ 60 phút liền (2 ô 30 phút); ngắn hơn là giờ vụn
     dpMinCount: 2,        // khoảng dự phòng: ít nhất hai khoảng…
@@ -562,6 +638,21 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     batdau:   { name: 'Khó bắt đầu', sign: 'Khung còn nguyên, không ai lấy mất, nhưng không làm.', fix: 'Hướng sửa: chẩn đoán lý do; viết câu “nếu… thì…”; thử một phiên 15 phút.' }
   };
   var RESNAME = { xong: 'Xong', phan: 'Một phần', chua: 'Chưa' };
+  /* Sáu mascot của CLB làm bạn đồng hành. Tên theo CLB; lời nhắc lấy từ nội dung workshop, không mô tả tính cách của nhóm nào. */
+  var MASCOTS = { suzaku: 'Suzaku', kirin: 'Kirin', seiryu: 'Seiryu', kois: 'Yin–Yang Kois', genbu: 'Genbu', byakko: 'Byakko' };
+  var MORDER = ['suzaku', 'kirin', 'seiryu', 'kois', 'genbu', 'byakko'];
+  var ROTA = { mau: 'genbu', viec: 'byakko', lich: 'seiryu', ra: 'kois', trong: 'kirin', dat: 'suzaku' };   // khi chưa chọn riêng một bạn
+  var LOI = {
+    mau0: 'Đếm trước đã, chưa cần phán xét. Bắt đầu từ thứ không dời được: lớp, bệnh viện, trực, di chuyển. Rồi đến giờ ngủ.',
+    mau1: 'Phần viền xanh trên lưới là giờ còn lại của bạn. Khối từ 60 phút là khối tự quyết; ô 30 phút lẻ là giờ vụn.',
+    viec: 'Việc nhiều hơn giờ thì phải chọn. Ba việc này được xếp trước, và được giữ lại nếu tuần có vỡ.',
+    lich0: 'Xếp theo thứ tự: ba việc ưu tiên vào khối tốt nhất, việc nhỏ vào giờ vụn, rồi hai khoảng dự phòng.',
+    lich1: 'Còn {n} tiêu chí chưa đạt. Bảng sáu tiêu chí chỉ rõ đang thiếu gì.',
+    lich2: 'Lịch này qua được {k} trên 6 tiêu chí. Đưa nó ra nơi bạn xem hằng ngày, rồi cứ theo đó mà làm.',
+    ra0: 'Phân tích, không tự trách. Gọi đúng tên một nguyên nhân, rồi mỗi tuần chỉ đổi một điều.',
+    ra1: 'Bạn làm đúng trọn các khung của tuần này. Ghi lại điều đã chạy tốt để giữ.',
+    trong: 'Chưa có gì để xếp. Làm bước 1 trước nhé.'
+  };
   var DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
   var DAYNAMES = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
   var CRIT = ['Giờ cố định được xếp vào trước', 'Có giờ ngủ ghi rõ', 'Tối đa ba việc ưu tiên, mỗi việc có hành động tiếp theo và khung giờ',
@@ -859,7 +950,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     sample[k] = { template: tpl, history: [], week: cloneWeek({ monday: upcomingMonday(), slots: slots, tasks: w.tasks, heavy: w.heavy,
       review: { done: done, res: rv.res, nights: rv.nights, screen: rv.screen, cause: rv.cause, ex: rv.ex, keep: rv.keep, change: rv.change, kept: rv.kept, ctrl: rv.ctrl } }) };
   });
-  var state = { active: 'an', view: 'mau', mine: { template: blank(), week: null, history: [] } }, storageOK = true, undo = { mau: [], lich: [] }, selKey = '';
+  var state = { active: 'an', view: 'mau', ban: '', mine: { template: blank(), week: null, history: [] } }, storageOK = true, undo = { mau: [], lich: [] }, selKey = '';
   function cleanSlots(a) { return a && a.length === N ? a.map(function (v) { return typeof v === 'string' && (!v || TYPES[typeOf(v)]) ? v : ''; }) : null; }
   function isYmd(x) { return /^\d{4}-\d{2}-\d{2}$/.test(x); }
   function parseMine(m) {
@@ -884,10 +975,11 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
       var m = parseMine(o.mine); if (m) state.mine = m;
       if (o.active === 'an' || o.active === 'minh' || o.active === 'toi') state.active = o.active;
       if (o.view === 'mau' || o.view === 'viec' || o.view === 'lich' || o.view === 'ra') state.view = o.view;
+      if (MASCOTS[o.ban]) state.ban = o.ban;
     } catch (e) { storageOK = false; }
   }
   function save() {
-    try { localStorage.setItem(CFG.storageKey, JSON.stringify({ v: 3, active: state.active, view: state.view, mine: state.mine })); storageOK = true; }
+    try { localStorage.setItem(CFG.storageKey, JSON.stringify({ v: 3, active: state.active, view: state.view, ban: state.ban, mine: state.mine })); storageOK = true; }
     catch (e) { storageOK = false; }
   }
   function isMine() { return state.active === 'toi'; }
@@ -900,6 +992,31 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     st.push(viewSlots().slice()); if (st.length > 30) st.shift();
     if (key === 'mau') state.mine.template = next; else state.mine.week.slots = next;
     save(); render();
+  }
+
+  // ---------- logo, trang mở đầu và bạn đồng hành
+  function banOf(ctx) { return MASCOTS[state.ban] ? state.ban : ROTA[ctx]; }
+  function mSrc(id, expr) { return 'hinh/m-' + id + '-' + expr + '.webp'; }
+  function mImg(id, expr, size) { return '<img src="' + mSrc(id, expr) + '" alt="" width="' + size + '" height="' + size + '" loading="lazy">'; }
+  function renderDh(elId, ctx, expr, text) {
+    var id = banOf(ctx);
+    $(elId).innerHTML = mImg(id, expr, 72) + '<p class="loi"><b>' + MASCOTS[id] + '</b>' + esc(text) + '</p>';
+  }
+  function renderChao() {
+    var h = '<div class="vong-logo"><img src="hinh/logo.webp" alt="Logo CLB Ngoại khoa Trưng Vương" width="240" height="240"></div>';
+    MORDER.forEach(function (id, i) {
+      h += '<button type="button" class="vong-m" style="--a:' + (i * 60) + 'deg" data-m="' + id + '" aria-pressed="' + (state.ban === id) + '" aria-label="Chọn ' + MASCOTS[id] + ' làm bạn đồng hành" title="' + MASCOTS[id] + '">' +
+        '<img src="' + mSrc(id, 'chao') + '" alt="" width="180" height="180"></button>';
+    });
+    $('vong').innerHTML = h;
+    $('chao-pick').innerHTML = MASCOTS[state.ban] ? 'Bạn đồng hành: <b>' + MASCOTS[state.ban] + '</b>. Chạm lần nữa để bỏ chọn.'
+      : 'Sáu mascot của CLB sẽ thay phiên đồng hành cùng bạn. Chạm vào một bạn nếu muốn chọn riêng.';
+  }
+  var entered = false;
+  function showChao() { entered = false; $('than').hidden = true; $('v-chao').hidden = false; renderChao(); window.scrollTo(0, 0); }
+  function enter() {
+    entered = true; try { sessionStorage.setItem('ltkt.vao', '1'); } catch (e) { /* không lưu được cũng không sao */ }
+    $('v-chao').hidden = true; $('than').hidden = false; render(); window.scrollTo(0, 0);
   }
 
   // ---------- hiển thị chung
@@ -954,6 +1071,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     $('setnote').hidden = mine;
     if (!mine) $('setnote-text').textContent = 'Dữ liệu mẫu, không phải của bạn. ' + SAMPLES[state.active].who;
     $('btn-copy').textContent = 'Chép sang “Của tôi” để sửa';
+    var hb = banOf('trong'); $('ban-img').src = mSrc(MASCOTS[state.ban] ? state.ban : hb, 'chao'); $('ban-name').textContent = MASCOTS[state.ban] || 'Cả sáu bạn';
     $('v-mau').hidden = v !== 'mau'; $('v-viec').hidden = v !== 'viec'; $('v-lich').hidden = v !== 'lich'; $('v-ra').hidden = v !== 'ra';
     $('btn-bk-restore').textContent = 'Khôi phục';
     if (v === 'mau') renderMau(); else { ensureWeek(); if (v === 'viec') renderViec(); else if (v === 'lich') renderLich(); else renderRa(); }
@@ -967,6 +1085,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     $('wk-hint').textContent = mine
       ? (empty ? 'Bắt đầu từ thứ không dời được: lớp, bệnh viện, trực, di chuyển. Rồi đến giờ ngủ và giờ ăn.' : 'Chạm vào một khối để sửa. Chạm vào ô trống để thêm giờ.')
       : 'Chạm vào một khối để xem chi tiết.';
+    renderDh('dh-mau', 'mau', 'nghi', empty ? LOI.mau0 : LOI.mau1);
     renderSum(st, empty); drawWeek('wk-head', 'wk-body', slots, empty);
     drawRules('rules', groups(slots), ['fixed', 'ess', 'hua'],
       '<li class="empty"><p><b>Chưa có khối nào.</b> Bấm “Thêm giờ” để nhập giờ lên lớp hoặc bệnh viện trước. Một khối có thể chọn nhiều ngày cùng lúc.</p><p>Muốn xem một tuần đã nhập sẵn, chọn mẫu An hoặc Minh ở trên.</p></li>');
@@ -999,10 +1118,11 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
   }
 
   // ---------- 2 · ba việc ưu tiên
-  function needEmpty() { return '<div class="empty"><p><b>Làm bước 1 trước.</b> Nhập tuần mẫu của bạn (giờ cố định, giờ ngủ), rồi quay lại đây để chọn ba việc và xếp lịch.</p></div>'; }
+  function needEmpty() { return '<div class="empty co-ban">' + mImg(banOf('trong'), 'ngu', 72) + '<p><b>Làm bước 1 trước.</b> Nhập tuần mẫu của bạn (giờ cố định, giờ ngủ), rồi quay lại đây để chọn ba việc và xếp lịch.</p></div>'; }
   function renderViec() {
     var w = cur().week, mine = isMine(), dis = mine ? '' : ' disabled';
     $('btn-to-lich').hidden = !w;
+    renderDh('dh-viec', 'viec', w ? 'quyet' : 'ngu', w ? LOI.viec : LOI.trong);
     if (!w) { $('tasks').innerHTML = needEmpty(); $('viec-hint').textContent = ''; $('viec-note').hidden = true; $('viec-sum').innerHTML = ''; return; }
     $('viec-hint').textContent = 'Ba việc này được xếp vào lịch trước, vào những khối giờ tốt nhất, và được giữ lại nếu tuần có vỡ. Ít nhất một việc phải là việc quan trọng nhưng chưa khẩn.';
     $('tasks').innerHTML = w.tasks.map(function (t, i) {
@@ -1042,11 +1162,15 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     $('btn-undo2').disabled = !undo.lich.length; $('btn-newweek').textContent = 'Lập tuần mới từ tuần mẫu';
     $('w-monday').disabled = $('w-heavy-day').disabled = $('w-heavy-text').disabled = !mine || !has;
     if (!has) {
+      renderDh('dh-lich', 'lich', 'ngu', LOI.trong);
       $('wk2-hint').textContent = ''; $('wk2-strip').innerHTML = ''; $('wk2-head').innerHTML = ''; $('wk2-body').innerHTML = needEmpty();
       $('c-score').innerHTML = '<b>0/6</b><span></span>'; $('c-list').innerHTML = ''; $('c-note').hidden = true; $('rules2').innerHTML = ''; $('rules2b').innerHTML = ''; $('x-hint').textContent = ''; $('print-info').innerHTML = '';
       $('btn-ics').disabled = $('btn-print').disabled = true; $('foot2').textContent = footText(mine); return;
     }
     var res = check(w), st = res.st, gs = groups(w.slots);
+    if (!st.planned) renderDh('dh-lich', 'lich', 'nghi', LOI.lich0);
+    else if (res.pass) renderDh('dh-lich', 'lich', 'vui', LOI.lich2.replace('{k}', res.score));
+    else renderDh('dh-lich', 'lich', 'quyet', LOI.lich1.replace('{n}', 6 - res.score));
     $('w-monday').value = w.monday;
     $('wk2-hint').textContent = mine ? 'Chạm vào ô còn trống để xếp việc. Thứ tự: ba việc ưu tiên vào khối tốt nhất, việc nhỏ vào giờ vụn, rồi khoảng dự phòng.' : 'Chạm vào một khối để xem chi tiết.';
     var sun = parseYmd(w.monday); sun.setDate(sun.getDate() + 6);
@@ -1055,7 +1179,8 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     drawWeek('wk2-head', 'wk2-body', w.slots, false);
     // sáu tiêu chí
     $('c-score').className = 'score' + (res.pass ? '' : ' no');
-    $('c-score').innerHTML = '<b>' + res.score + '/6</b><span>' + (res.pass ? 'Đạt: lịch này qua được từ ' + CFG.passScore + ' trên 6 tiêu chí.' : 'Chưa đạt: cần từ ' + CFG.passScore + ' trên 6 tiêu chí.') + '</span>';
+    $('c-score').innerHTML = '<b>' + res.score + '/6</b><span>' + (res.pass ? 'Đạt: lịch này qua được từ ' + CFG.passScore + ' trên 6 tiêu chí.' : 'Chưa đạt: cần từ ' + CFG.passScore + ' trên 6 tiêu chí.') + '</span>' +
+      (res.pass && st.planned ? mImg(banOf('dat'), 'vui', 60) : '');
     $('c-list').innerHTML = res.items.map(function (c, i) { return '<li class="' + (c.ok ? 'ok' : 'no') + '"><span class="mk" aria-hidden="true">' + (c.ok ? '✓' : (i + 1)) + '</span><span><b>' + esc(CRIT[i]) + '.</b> <small>' + (c.ok ? 'Đạt. ' : 'Chưa đạt. ') + esc(c.detail) + '</small></span></li>'; }).join('');
     var rem = reminders(w, st); $('c-note').hidden = !rem.length; $('c-note').textContent = rem.join(' ');
     // ngày nặng
@@ -1105,10 +1230,12 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
         (h.change ? '<small>Điều định đổi: ' + esc(h.change) + '</small>' : '') + '</li>';
     }).join('');
     if (!w) {
+      renderDh('dh-ra', 'ra', 'ngu', LOI.trong);
       $('ra-hint').textContent = ''; $('ra-score').innerHTML = ''; $('ra-ticks').innerHTML = needEmpty(); $('ra-res').innerHTML = ''; $('ra-ratio').textContent = '';
       $('ra-causes').innerHTML = ''; $('ra-fix').hidden = true; $('ra-kept').innerHTML = ''; $('ra-ctrl').innerHTML = ''; $('ra-msg').value = ''; return;
     }
     var r = w.review, runs = studyRuns(w), done = doneCount(w);
+    renderDh('dh-ra', 'ra', runs.length && done === runs.length ? 'vui' : 'nghi', runs.length && done === runs.length ? LOI.ra1 : LOI.ra0);
     $('ra-hint').textContent = runs.length ? 'Tuần ' + weekSpan(w) + '. Làm trong 15 phút, vào một giờ cố định mỗi tuần. Chạm vào từng khung bạn đã làm đúng như lịch.' : 'Tuần này chưa có khung việc ưu tiên nào trên lịch. Xếp lịch ở bước 3 trước.';
     $('ra-score').innerHTML = runs.length ? '<b>' + done + '/' + runs.length + '</b><span>khung làm đúng như lịch</span>' : '';
     $('ra-ticks').innerHTML = runs.map(function (x) {
@@ -1227,6 +1354,13 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     var b = e.target.closest('.tab'); if (!b) return;
     state.view = b.getAttribute('data-view'); armedBtn = ''; selKey = ''; save(); render();
   });
+  $('btn-start').addEventListener('click', enter);
+  $('btn-home').addEventListener('click', showChao);
+  $('btn-ban').addEventListener('click', showChao);
+  $('vong').addEventListener('click', function (e) {
+    var b = e.target.closest('.vong-m'); if (!b) return;
+    var id = b.getAttribute('data-m'); state.ban = state.ban === id ? '' : id; save(); renderChao();
+  });
   $('btn-to-lich').addEventListener('click', function () { state.view = 'lich'; save(); render(); window.scrollTo(0, 0); });
   $('btn-copy').addEventListener('click', function () {
     var hasData = !tplEmpty() || !!state.mine.week;
@@ -1320,7 +1454,7 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
   $('btn-newweek2').addEventListener('click', function () { if (!arm('newweek2', this, 'Bấm lần nữa: lưu tuần này vào danh sách và lập tuần mới')) return; startNewWeek(); });
 
   // sao lưu và khôi phục
-  function backupText() { return JSON.stringify({ app: 'lich-tuan-kha-thi', v: 3, saved: new Date().toISOString(), mine: state.mine }); }
+  function backupText() { return JSON.stringify({ app: 'lich-tuan-kha-thi', v: 3, appVersion: CFG.version, saved: new Date().toISOString(), mine: state.mine }); }
   function bkMsg(t) { $('bk-msg').textContent = t; $('bk-msg').hidden = false; }
   $('btn-bk-copy').addEventListener('click', function () {
     $('bk-text').value = backupText();
@@ -1368,12 +1502,16 @@ input[type="file"] { max-width: 100%; font-size: 14px; }
     check: function (name) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return o.week ? check(o.week) : null; },
     ics: function (name) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return o.week ? icsText(o.week) : ''; },
     groups: function () { return groups(viewSlots()); },
+    enter: enter, home: showChao, version: CFG.version,
     review: function (name) { var o = name ? (name === 'toi' ? state.mine : sample[name]) : cur(); return o.week ? { done: doneCount(o.week), total: studyRuns(o.week).length, msg: msgText(o.week), history: o.history } : null; }
   };
 
   initForm(); load();
-  (function () { var h = (location.hash || '').slice(1); if (h === 'mau' || h === 'viec' || h === 'lich' || h === 'ra') state.view = h; })();
-  render();
+  $('ver').textContent = $('ver-chao').textContent = 'Phiên bản ' + CFG.version + ' · ' + CFG.released + ' · bản thử nghiệm';
+  var viaHash = false;
+  (function () { var h = (location.hash || '').slice(1); if (h === 'mau' || h === 'viec' || h === 'lich' || h === 'ra') { state.view = h; viaHash = true; } })();
+  var seen = false; try { seen = sessionStorage.getItem('ltkt.vao') === '1'; } catch (e) { seen = false; }
+  if (viaHash || seen) enter(); else showChao();
 })();
 </script>
 <script>
