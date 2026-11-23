@@ -8,6 +8,14 @@ Quy ước đánh số, dạng `A.B.C`:
 
 Số phiên bản hiện ở chân trang và ở trang mở đầu của app, và được ghi vào tệp sao lưu. Mỗi phiên bản đưa lên web có một nhãn `vA.B.C` trong kho mã.
 
+## 0.5.0 · 23/11/2026
+
+- Giao diện dễ đọc hơn trên điện thoại: tiêu đề viết thường thay cho chữ in hoa giãn cách, bớt chữ đậm; nút tải tệp .ics và in nằm ngay sau sáu tiêu chí; danh sách khối thu gọn được; bước 3 làm nhạt ô giờ trống để ba việc ưu tiên nổi lên; khối việc đã hứa có chữ “Hứa”; lưới tuần trên máy tính cao hơn, chữ dài kết thúc bằng “…”.
+- Bước 3 có tiến độ của ba việc ưu tiên (đã xếp so với cần xếp); hộp nhập khối báo việc đang chọn còn thiếu bao nhiêu phút.
+- Tệp lời hẹn lập lịch 15 phút lặp lại mỗi tuần, nhắc trước 10 phút; hướng dẫn nhập tệp vào lịch cho máy tính, iPhone, Android.
+- “Của tôi” giữ được nhiều tuần mẫu (mỗi đợt lâm sàng một tuần mẫu, tối đa 6); chọn tuần mẫu khi lập tuần mới. Bản lưu và tệp sao lưu cũ vẫn đọc được.
+- Chế độ nhúng `?nhung=1` để mở trong app thành viên NKTV: bỏ trang mở đầu, logo, tên và chân trang; vẫn chọn được bạn đồng hành; bản in vẫn đủ đầu trang.
+
 ## 0.4.0 · 08/10/2026
 
 - Trang mở đầu: logo CLB ở giữa, sáu mascot xếp vòng quanh, nút “Bắt đầu”.
